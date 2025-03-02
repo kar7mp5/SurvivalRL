@@ -3,6 +3,7 @@
 ## Table of Contents
 
 -   [Getting Started](#getting-started)
+-   [Updates](#updates)
 -   [LICENSE](#license)
 
 ## Getting Started
@@ -21,6 +22,10 @@ $ sudo apt-get install python3-tk
 ```sh
 $ python3 main.py
 ```
+
+## Updates
+
+You can check for updates at the [UPDATES.md](./UPDATES.md).
 
 ## LICENSE
 
