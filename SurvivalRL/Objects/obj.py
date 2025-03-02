@@ -68,3 +68,15 @@ class Obj:
             NotImplementedError: If called directly from the Obj class.
         """
         raise NotImplementedError
+
+    def update(self, fps):
+        """
+        Abstract method to update the object's position based on the current frame.
+
+        Args:
+            frame (int): Current animation frame number.
+
+        Raises:
+            NotImplementedError: If called directly from the Obj class.
+        """
+        raise NotImplementedError

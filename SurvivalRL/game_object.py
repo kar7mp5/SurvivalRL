@@ -24,7 +24,7 @@ class GameObject:
         obj.draw(self.ax)
         self.objects.append(obj)
 
-    def update(self):
+    def update(self, fps):
         """
         Updates all objects in the game by calling their respective update methods.
 
@@ -32,5 +32,5 @@ class GameObject:
             list: A list of updated shapes for animation rendering.
         """
         for obj in self.objects:
-            obj.update()
+            obj.update(fps)
         return [obj.shape for obj in self.objects]

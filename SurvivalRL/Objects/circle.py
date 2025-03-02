@@ -33,13 +33,14 @@ class Circle(Obj):
         self.shape = patches.Circle(self.pos(), self.radius, color=self.colour)
         ax.add_patch(self.shape)
 
-    def update(self):
+    def update(self, fps):
         """
         Updates the circle's position by moving it randomly within a defined range.
 
         The circle moves in both x and y directions with a random displacement.
         The new position is applied to the shape.
         """
-        dx, dy = np.random.uniform(-2, 1), np.random.uniform(-1, 1)
+        speed_multiplier = 60 / fps
+        dx, dy = np.random.uniform(-2, 1) * speed_multiplier, np.random.uniform(-1, 1) * speed_multiplier
         self.pos.move(dx, dy)
         self.shape.set_center(self.pos())

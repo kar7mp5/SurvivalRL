@@ -35,13 +35,14 @@ class Rectangle(Obj):
         self.shape = patches.Rectangle(self.pos(), self.width, self.height, color=self.colour)
         ax.add_patch(self.shape)
 
-    def update(self):
+    def update(self, fps):
         """
         Updates the rectangle's position by moving it randomly within a defined range.
 
         The rectangle moves in both x and y directions with a random displacement.
         The new position is applied to the shape.
         """
-        dx, dy = np.random.uniform(-1, 1), np.random.uniform(-1, 1)
+        speed_multiplier = 60 / fps
+        dx, dy = np.random.uniform(-2, 1) * speed_multiplier, np.random.uniform(-1, 1) * speed_multiplier
         self.pos.move(dx, dy)
         self.shape.set_xy(self.pos())
