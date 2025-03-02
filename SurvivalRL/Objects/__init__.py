@@ -6,3 +6,5 @@ path.insert(0, dirname(__file__))
 from .obj import Obj
 from .circle import Circle
 from .rectangle import Rectangle
+from .herbivore import Herbivore
+from .plant import Plant

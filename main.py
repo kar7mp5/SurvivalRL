@@ -6,11 +6,11 @@ matplotlib.use("TkAgg") # WSL matplotlib animation renderer
 import numpy as np
 
 # Load game object
-from SurvivalRL import Config, GameObject, Circle, Rectangle
+from SurvivalRL import Config, GameObject, Rectangle, Herbivore, Plant
 
 target_fps = 30
 interval = 1000 / target_fps
-duration = 20
+duration = 10
 frames = target_fps * duration
 
 
@@ -22,19 +22,32 @@ if __name__=='__main__':
     game = GameObject(ax)
 
     # Add objects
-    for i in range(5):
-        game.add_object(Circle(
+    for i in range(3):
+        game.add_object(Herbivore(
+            game=game,
             ax=ax,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             radius=1,
             target_speed=np.random.uniform(0.1, 0.2),
             colour=np.random.choice(["blue", "green", "purple", "orange"]),
-            name=f"Cell {i+1}"
+            name=f"Herbivore {i+1}"
         ))
 
-    for i in range(3):
+    for i in range(10):
+        game.add_object(Plant(
+            game=game,
+            ax=ax,
+            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            radius=1,
+            colour="green",
+            name=f"Plant {i+1}"
+        ))
+
+    for i in range(5):
         game.add_object(Rectangle(
+            game=game,
             ax=ax,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
@@ -46,9 +59,9 @@ if __name__=='__main__':
         ))
 
     def animate(frame):
-        """ Updates all objects in each frame """
+        """Updates all objects in each frame"""
         return game.update(target_fps)
 
-    ani = animation.FuncAnimation(fig, animate, frames=frames, interval=interval, blit=True)
+    ani = animation.FuncAnimation(fig, animate, frames=frames, interval=interval, blit=False)
     ani.save("result.gif", writer="pillow", fps=target_fps)
     # plt.show()
