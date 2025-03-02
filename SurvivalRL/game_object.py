@@ -28,7 +28,7 @@ class GameObject:
         Args:
             obj (Obj): An instance of a game object (e.g., Circle, Rectangle).
         """
-        obj.draw(self.ax)
+        obj.draw()
         self.objects.append(obj)
 
     def draw_grid(self):
@@ -52,6 +52,6 @@ class GameObject:
             self.grid[(cell_x, cell_y)].append(obj)
 
         for obj in self.objects:
-            obj.update(fps, self.objects, self.grid)
+            obj.update(fps, self.grid)
 
         return [obj.shape for obj in self.objects]

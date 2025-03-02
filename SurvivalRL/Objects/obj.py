@@ -1,4 +1,7 @@
+import matplotlib
 import numpy as np
+
+from SurvivalRL import GameObject
 
 
 class Position:    
@@ -75,7 +78,14 @@ class Obj:
     This class provides a base for different graphical objects that can be drawn and updated.
     """
 
-    def __init__(self, x: float, y: float, target_speed: float, colour: str, name: str=None):
+    def __init__(
+        self, 
+        game: GameObject, 
+        ax: matplotlib.axes.Axes,
+        x: float, y: float, 
+        target_speed: float, 
+        colour: str,
+        name: str=None):
         """
         Initializes an Obj with a position and color.
 
@@ -84,6 +94,8 @@ class Obj:
             y (float): Initial y-coordinate of the object.
             colour (str): Color of the object.
         """
+        self.game = game
+        self.ax = ax
         self.pos = Position(x, y)
         self.target_speed = target_speed
         self.colour = colour
@@ -91,7 +103,7 @@ class Obj:
         if name is not None:
             self.name = name
 
-    def draw(self, ax):
+    def draw(self):
         """
         Abstract method to draw the object on a given axis.
 
@@ -105,7 +117,7 @@ class Obj:
         """
         raise NotImplementedError
 
-    def update(self, fps, objects, grid):
+    def update(self):
         """
         Abstract method to update the object's position based on the current frame.
 

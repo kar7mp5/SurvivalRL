@@ -1,5 +1,5 @@
 from obj import Obj
-from SurvivalRL import Config
+from SurvivalRL import Config, GameObject
 
 from matplotlib.transforms import Affine2D
 import matplotlib.patches as patches
@@ -14,6 +14,7 @@ class Rectangle(Obj):
 
     def __init__(
         self,
+        game: GameObject,
         ax: matplotlib.axes.Axes, 
         x: float, y: float, 
         width: float, height: float, 
@@ -32,17 +33,17 @@ class Rectangle(Obj):
             colour (str): Color of the rectangle.
             name (str, optional): Name label displayed above the rectangle.
         """
-        super().__init__(x, y, target_speed, colour, name)
+        super().__init__(game, ax, x, y, target_speed, colour, name)
+
         self.width = width
         self.height = height
-        self.ax = ax
         self.rotation_angle = 0  
 
         # Direction arrow for movement visualization
-        self.direction_arrow, = ax.plot([x, x], [y, y], color="red", marker="o", linewidth=2)
+        self.direction_arrow, = self.ax.plot([x, x], [y, y], color="red", marker="o", linewidth=2)
 
         # Label displaying the name of the rectangle
-        self.label = ax.text(x + width / 2, y + height + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
+        self.label = self.ax.text(x + width / 2, y + height + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
 
         self.set_new_target()
 
@@ -62,16 +63,7 @@ class Rectangle(Obj):
                 self.target_y = new_y
                 break
 
-    def get_grid_cell(self):
-        """ 
-        Gets the grid cell coordinates based on the rectangle's position.
-
-        Returns:
-            tuple: A tuple containing the grid cell coordinates (x, y).
-        """
-        return int(self.pos.x // Config.GRID_SIZE), int(self.pos.y // Config.GRID_SIZE)
-
-    def draw(self, ax):
+    def draw(self):
         """
         Draws the rectangle on the given matplotlib axis.
 
@@ -79,9 +71,9 @@ class Rectangle(Obj):
             ax (matplotlib.axes.Axes): The axis where the rectangle will be drawn.
         """
         self.shape = patches.Rectangle(self.pos(), self.width, self.height, color=self.colour, angle=0)
-        ax.add_patch(self.shape)
+        self.ax.add_patch(self.shape)
 
-    def update(self, fps, objects, grid):
+    def update(self, fps, grid):
         """
         Updates the rectangle's position by moving it towards its target.
 
@@ -127,6 +119,24 @@ class Rectangle(Obj):
         self.shape.set_xy(self.pos())
         self.label.set_position((self.pos.x + self.width / 2, self.pos.y + self.height + 0.5))
 
+    def division(self, game: GameObject):
+        """
+        Divide Cells
+        """
+        game.add_object(Rectangle(
+            ax=self.ax,
+            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            width=2,
+            height=2,
+            target_speed=np.random.uniform(0.1, 0.3),
+            colour=np.random.choice(["blue", "green", "purple", "orange"]),
+            name=f"Clone Rect"
+        ))
+
+    """
+    Collision System
+    """
     def apply_rotation(self):
         """ 
         Applies rotation transform to the rectangle.
@@ -135,6 +145,15 @@ class Rectangle(Obj):
         """
         transform = Affine2D().rotate_deg_around(self.pos.x + self.width / 2, self.pos.y + self.height / 2, self.rotation_angle)
         self.shape.set_transform(transform + self.ax.transData)
+
+    def get_grid_cell(self):
+        """ 
+        Gets the grid cell coordinates based on the rectangle's position.
+
+        Returns:
+            tuple: A tuple containing the grid cell coordinates (x, y).
+        """
+        return int(self.pos.x // Config.GRID_SIZE), int(self.pos.y // Config.GRID_SIZE)
 
     def is_colliding(self, other):
         """ 

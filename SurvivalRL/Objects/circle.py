@@ -1,5 +1,5 @@
 from obj import Obj
-from SurvivalRL import Config
+from SurvivalRL import Config, GameObject
 
 import matplotlib.patches as patches
 import matplotlib
@@ -14,6 +14,7 @@ class Circle(Obj):
 
     def __init__(
         self,
+        game: GameObject,
         ax: matplotlib.axes.Axes, 
         x: float, y: float, 
         radius: float, 
@@ -31,12 +32,13 @@ class Circle(Obj):
             colour (str): Color of the circle.
             name (str, optional): Name label displayed above the circle. Defaults to None.
         """
-        super().__init__(x, y, target_speed, colour, name)
+        super().__init__(game, ax, x, y, target_speed, colour, name)
         self.radius = radius
-        self.label = ax.text(x, y + radius + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
+    
+        self.label = self.ax.text(x, y + radius + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
 
         # Direction arrow for movement visualization
-        self.direction_arrow, = ax.plot([x, x], [y, y], color="red", linewidth=2, marker="o", markersize=6)
+        self.direction_arrow, = self.ax.plot([x, x], [y, y], color="red", linewidth=2, marker="o", markersize=6)
 
         self.set_new_target()
 
@@ -56,7 +58,7 @@ class Circle(Obj):
                 self.target_y = new_y
                 break
 
-    def draw(self, ax):
+    def draw(self):
         """
         Draws the circle on the given matplotlib axis.
 
@@ -64,9 +66,9 @@ class Circle(Obj):
             ax (matplotlib.axes.Axes): The axis where the circle will be drawn.
         """
         self.shape = patches.Circle(self.pos(), self.radius, color=self.colour)
-        ax.add_patch(self.shape)
+        self.ax.add_patch(self.shape)
 
-    def update(self, fps, objects, grid):
+    def update(self, fps, grid):
         """
         Updates the circle's position by moving it towards its target.
 
@@ -111,6 +113,24 @@ class Circle(Obj):
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
 
+    def division(self):
+        """
+        Divide Cells
+        """
+        self.game.add_object(Circle(
+            game=self.game,
+            ax=self.ax,
+            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            radius=1,
+            target_speed=np.random.uniform(0.1, 0.3),
+            colour=np.random.choice(["blue", "green", "purple", "orange"]),
+            name=f"Clone Cell"
+        ))
+
+    """
+    Collision System
+    """
     def get_grid_cell(self):
         """ 
         Gets the grid cell coordinates based on the circle's position.
