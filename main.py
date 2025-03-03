@@ -8,11 +8,6 @@ import numpy as np
 # Load game object
 from SurvivalRL import Config, GameObject, Predator, Herbivore, Plant
 
-target_fps = 30
-interval = 1000 / target_fps
-duration = 20
-frames = target_fps * duration
-
 
 if __name__=='__main__':
     fig, ax = plt.subplots()
@@ -60,8 +55,14 @@ if __name__=='__main__':
 
     def animate(frame):
         """Updates all objects in each frame"""
-        return game.update(target_fps)
+        return game.update(Config.TARGET_FPS)
 
-    ani = animation.FuncAnimation(fig, animate, frames=frames, interval=interval, blit=False)
-    ani.save("result.gif", writer="pillow", fps=target_fps)
+    ani = animation.FuncAnimation(
+        fig=fig, 
+        func=animate, 
+        frames=Config.FRAMES, 
+        interval=Config.INTERVAL, 
+        blit=False)
+
+    ani.save("result.gif", writer="pillow", fps=Config.TARGET_FPS)
     # plt.show()
