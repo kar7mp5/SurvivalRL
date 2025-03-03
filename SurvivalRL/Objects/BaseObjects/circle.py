@@ -35,10 +35,17 @@ class Circle(BaseObject):
         super().__init__(game, ax, x, y, target_speed, colour, name)
         self.radius = radius
     
-        self.label = self.ax.text(x, y + radius + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
+        self.label = self.ax.text(x, y + radius + 0.5, 
+                                  self.name, 
+                                  ha="center", va="bottom", 
+                                  fontsize=10, 
+                                  color="black")
 
         # Direction arrow for movement visualization
-        self.direction_arrow, = self.ax.plot([x, x], [y, y], color="red", linewidth=2, marker="o", markersize=6)
+        self.direction_arrow, = self.ax.plot([x, x], [y, y], 
+                                             color="red", 
+                                             linewidth=2, 
+                                             marker="o", markersize=3)
 
     def draw(self):
         """Draws the circle on the given matplotlib axis."""
@@ -127,8 +134,8 @@ class Circle(BaseObject):
         else:
             return
 
-        bounce_x = direction_x * overlap * 0.5
-        bounce_y = direction_y * overlap * 0.5
+        bounce_x = direction_x * overlap * 0.7
+        bounce_y = direction_y * overlap * 0.7
 
         self.pos.move(bounce_x, bounce_y)
         other.pos.move(-bounce_x, -bounce_y)

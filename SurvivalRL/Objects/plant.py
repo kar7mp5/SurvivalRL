@@ -24,7 +24,7 @@ class Plant(Circle):
             ax=self.ax,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            radius=1,
+            radius=0.5,
             target_speed=np.random.uniform(0.1, 0.3),
             colour=np.random.choice(["blue", "green", "purple", "orange"]),
             name=f"Clone Cell"

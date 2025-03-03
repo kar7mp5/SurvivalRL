@@ -88,7 +88,10 @@ class Rectangle(BaseObject):
         self.height = height
         self.rotation_angle = 0  
 
-        self.direction_arrow, = self.ax.plot([x, x], [y, y], color="red", marker="o", linewidth=2)
+        self.direction_arrow, = self.ax.plot([x, x], [y, y], 
+                                             color="red", 
+                                             linewidth=2, 
+                                             marker="o", markersize=3)
 
         self.label = self.ax.text(x + width / 2, y + height + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
 
@@ -285,8 +288,8 @@ class Rectangle(BaseObject):
         else:
             return  
 
-        bounce_x = direction_x * overlap * 0.5
-        bounce_y = direction_y * overlap * 0.5
+        bounce_x = direction_x * overlap * 0.7
+        bounce_y = direction_y * overlap * 0.7
 
         self.pos.move(bounce_x, bounce_y)
         other.pos.move(-bounce_x, -bounce_y)
