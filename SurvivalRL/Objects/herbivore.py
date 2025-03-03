@@ -1,3 +1,4 @@
+import matplotlib.axes
 from Objects import Circle
 from SurvivalRL import Config, GameObject
 
@@ -8,8 +9,18 @@ import numpy as np
 
 class Herbivore(Circle):
     
-    def __init__(self, game, ax, x, y, radius, target_speed, colour, name = None):
+    def __init__(
+        self, 
+        game: GameObject,
+        ax: matplotlib.axes.Axes, 
+        x: float,
+        y: float,
+        radius: float, 
+        target_speed: float, 
+        colour: str, 
+        name: str=None):
         super().__init__(game, ax, x, y, radius, target_speed, colour, name)
+
         self.set_new_target()
 
     def update(self, fps, grid):
