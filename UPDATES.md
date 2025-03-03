@@ -24,3 +24,4 @@
 -   Add Plant, Herbivore, and Predator (but these objects have no functions).
 
 ![plant_herbivore_predator_v1](./docs/plant_herbivore_predator_v1.gif)
+![plant_herbivore_predator_v1_1](./docs/plant_herbivore_predator_v1-1.gif)
