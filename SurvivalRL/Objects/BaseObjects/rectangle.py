@@ -64,6 +64,7 @@ class Rectangle(BaseObject):
         game: GameObject,
         ax: matplotlib.axes.Axes, 
         x: float, y: float, 
+        energy: float,
         width: float, height: float, 
         target_speed: float, 
         colour: str, 
@@ -82,20 +83,38 @@ class Rectangle(BaseObject):
             colour (str): Color of the rectangle.
             name (str, optional): Name label displayed above the rectangle.
         """
-        super().__init__(game, ax, x, y, target_speed, colour, name)
+        super().__init__(game, ax, x, y, energy, target_speed, colour, name)
 
         self.width = width
         self.height = height
         self.rotation_angle = 0  
 
         self.direction_arrow, = self.ax.plot([x, x], [y, y], 
-                                             color="red", 
+                                             color="brown", 
                                              linewidth=2, 
                                              marker="o", markersize=3)
 
-        self.label = self.ax.text(x + width / 2, y + height + 0.5, self.name, ha="center", va="bottom", fontsize=10, color="black")
+        self.label = self.ax.text(x + width / 2, y + height + 0.5, 
+                                  f'{self.name} {self.energy}', 
+                                  ha="center", va="bottom", 
+                                  fontsize=10, 
+                                  color="black")
+
+        # Always show a red rectangle around the hitbox in debugging mode
+        if Config.DEBUG_MODE:
+            self.hitbox = patches.Rectangle(
+                (self.pos.x, self.pos.y),
+                self.width, self.height,
+                linewidth=1, edgecolor='red', facecolor='none'
+            )
+            self.ax.add_patch(self.hitbox)
 
         self.set_new_target()
+
+    def update(self):
+        # Update hitbox position
+        if Config.DEBUG_MODE:
+            self.hitbox.set_xy((self.pos.x, self.pos.y))
 
     def draw(self):
         """Draws the circle on the given matplotlib axis."""
@@ -295,3 +314,4 @@ class Rectangle(BaseObject):
         other.pos.move(-bounce_x, -bounce_y)
 
         self.set_new_target()
+        other.set_new_target()

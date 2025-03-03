@@ -15,11 +15,14 @@ class Herbivore(Circle):
         ax: matplotlib.axes.Axes, 
         x: float,
         y: float,
+        energy: float,
         radius: float, 
         target_speed: float, 
         colour: str, 
-        name: str=None):
-        super().__init__(game, ax, x, y, radius, target_speed, colour, name)
+        name: str = None):
+        super().__init__(game, ax, x, y, energy, radius, target_speed, colour, name)
+
+        self.test = True
 
         self.set_new_target()
 
@@ -35,9 +38,17 @@ class Herbivore(Circle):
             objects (list): A list of all objects in the scene.
             grid (dict): The spatial partitioning grid for optimized collision detection.
         """
+        super().update()
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
+
+        # Update debug label with movement tracking information
+        if Config.DEBUG_MODE is True:
+            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_fontsize(6)
 
         if reached_target:
             self.set_new_target()
@@ -83,22 +94,57 @@ class Herbivore(Circle):
                 self.target_x = new_x
                 self.target_y = new_y
                 break
-
-    def division(self):
-        """
-        Divide Cells
-        """
-        self.game.add_object(Circle(
-            game=self.game,
-            ax=self.ax,
-            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            radius=1,
-            target_speed=np.random.uniform(0.1, 0.3),
-            colour=np.random.choice(["blue", "green", "purple", "orange"]),
-            name=f"Clone Cell"
-        ))
         
     def resolve_collision(self, other):
+        from Objects import Plant
         super().resolve_collision(other)
+        # if self.test:
+        #     self.division()
+        #     self.test = False
+        if isinstance(other, Plant):
+            self.division()
+            other.remove()
         self.set_new_target()
+        
+    def division(self):
+        """
+        Creates a new Predator instance (cell division).
+        
+        A new predator with similar properties is added to the game at a random position.
+        """
+        self.game.add_object(Herbivore(
+            game=self.game,
+            ax=self.ax,
+            x=self.pos.x + np.random.uniform(-1, 1),
+            y=self.pos.x + np.random.uniform(-1, 1),
+            energy=100,
+            radius=self.radius,
+            target_speed=np.random.uniform(0.1, 0.3),
+            colour=np.random.choice(["purple", "orange"]),
+            name=f"Herbivore Clone",
+        ))
+
+    def remove(self):
+        """
+        Removes the Predator from the game and also from the matplotlib figure.
+        """
+        if self in self.game.objects:
+            self.game.objects.remove(self)  # Remove from the game list
+            
+            # Remove from the matplotlib figure
+            if self.shape is not None:
+                self.shape.remove()
+
+            # Remove movement arrow if exists
+            if hasattr(self, "direction_arrow"):
+                self.direction_arrow.remove()
+
+            # Remove the name label if exists
+            if hasattr(self, "label"):
+                self.label.remove()
+            
+            # Remove the hitbox if exists
+            if hasattr(self, "hitbox"):
+                self.hitbox.remove()
+
+            del self  # Delete the object

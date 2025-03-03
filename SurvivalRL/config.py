@@ -6,9 +6,11 @@ class Config:
     WINDOW_SIZE: int = 100
     GRID_SIZE: int = 20
     MIN_TARGET_DISTANCE: int = 5
-    
+
+    DEBUG_MODE: bool = True
+
     # Animation Setting
     TARGET_FPS: int = 30
-    DURATION: int = 5
+    DURATION: int = 10
     INTERVAL: float = 1000 / TARGET_FPS
     FRAMES: float = TARGET_FPS * DURATION

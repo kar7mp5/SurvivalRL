@@ -17,7 +17,8 @@ class BaseObject:
         game: GameObject, 
         ax: matplotlib.axes.Axes,
         x: float, y: float, 
-        target_speed: float, 
+        energy: float,
+        target_speed: float,
         colour: str,
         name: str = None):
         """
@@ -34,12 +35,13 @@ class BaseObject:
         """
         self.game = game
         self.ax = ax
-        self.pos = Position(x, y)  # Represents the object's position in a 2D space
-        self.target_speed = target_speed  # Speed at which the object moves
-        self.colour = colour  # Color used to render the object
-        self.shape = None  # To be defined in subclasses
+        self.pos = Position(x, y) # Represents the object's position in a 2D space
+        self.target_speed = target_speed # Speed at which the object moves
+        self.energy = energy
+        self.colour = colour # Color used to render the object
+        self.shape = None    # To be defined in subclasses
         if name is not None:
-            self.name = name  # Assign a name to the object if provided
+            self.name = name # Assign a name to the object if provided
 
     def update(self):
         """

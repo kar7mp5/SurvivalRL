@@ -2,7 +2,6 @@ import matplotlib.axes
 from BaseObjects import Rectangle
 from SurvivalRL import Config, GameObject
 
-import matplotlib.patches as patches
 import matplotlib
 import numpy as np
 
@@ -15,6 +14,7 @@ class Predator(Rectangle):
         ax: matplotlib.axes.Axes, 
         x: float, 
         y: float,
+        energy: float,
         width: float, height: float,
         target_speed: float, 
         colour: str, 
@@ -33,7 +33,7 @@ class Predator(Rectangle):
             colour (str): Color of the rectangle.
             name (str, optional): Name label displayed above the rectangle.
         """
-        super().__init__(game, ax, x, y, width, height, target_speed, colour, name)
+        super().__init__(game, ax, x, y, energy, width, height, target_speed, colour, name)
         
         self.set_new_target()
 
@@ -55,9 +55,17 @@ class Predator(Rectangle):
 
     def update(self, fps, grid):
         """Updates the rectangle's position and handles collisions."""
+        super().update()
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
+
+        # Update debug label with movement tracking information
+        if Config.DEBUG_MODE is True:
+            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_fontsize(6)
 
         if reached_target:
             self.set_new_target()
@@ -105,21 +113,53 @@ class Predator(Rectangle):
                 self.target_y = new_y
                 break
 
+    def resolve_collision(self, other):
+        from BaseObjects import Circle
+        super().resolve_collision(other)
+        if isinstance(other, Circle):
+            other.remove()
+        self.set_new_target()
+        
     def division(self):
         """
-        Divide Cells
+        Creates a new Predator instance (cell division).
+        
+        A new predator with similar properties is added to the game at a random position.
         """
-        self.game.add_object(Rectangle(
+        self.game.add_object(Predator(
             game=self.game,
             ax=self.ax,
-            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            radius=1,
+            x=self.pos.x + np.random.uniform(-5, 5),
+            y=self.pos.x + np.random.uniform(-5, 5),
+            energy=100,
+            width=self.width,
+            height=self.height,
             target_speed=np.random.uniform(0.1, 0.3),
-            colour=np.random.choice(["blue", "green", "purple", "orange"]),
-            name=f"Clone Cell"
+            colour=np.random.choice(["purple", "orange"]),
+            name=f"Predator Clone"
         ))
 
-    def resolve_collision(self, other):
-        super().resolve_collision(other)
-        self.set_new_target()
+    def remove(self):
+        """
+        Removes the Predator from the game and also from the matplotlib figure.
+        """
+        if self in self.game.objects:
+            self.game.objects.remove(self)  # Remove from the game list
+            
+            # Remove from the matplotlib figure
+            if self.shape is not None:
+                self.shape.remove()
+
+            # Remove movement arrow if exists
+            if hasattr(self, "direction_arrow"):
+                self.direction_arrow.remove()
+
+            # Remove the name label if exists
+            if hasattr(self, "label"):
+                self.label.remove()
+            
+            # Remove the hitbox if exists
+            if hasattr(self, "hitbox"):
+                self.hitbox.remove()
+
+            del self  # Delete the object

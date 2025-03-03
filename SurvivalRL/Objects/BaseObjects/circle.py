@@ -17,7 +17,8 @@ class Circle(BaseObject):
         game: GameObject,
         ax: matplotlib.axes.Axes, 
         x: float, y: float, 
-        radius: float, 
+        energy: float, 
+        radius: float,  
         target_speed: float, 
         colour: str, 
         name: str = None):
@@ -32,20 +33,35 @@ class Circle(BaseObject):
             colour (str): Color of the circle.
             name (str, optional): Name label displayed above the circle. Defaults to None.
         """
-        super().__init__(game, ax, x, y, target_speed, colour, name)
+        super().__init__(game, ax, x, y, energy, target_speed, colour, name)
+        
         self.radius = radius
-    
+        
         self.label = self.ax.text(x, y + radius + 0.5, 
-                                  self.name, 
+                                  f'{self.name} {self.energy}', 
                                   ha="center", va="bottom", 
                                   fontsize=10, 
                                   color="black")
+
+        # Always show a red rectangle around the hitbox in debugging mode
+        if Config.DEBUG_MODE:
+            self.hitbox = patches.Rectangle(
+                (self.pos.x - self.radius, self.pos.y - self.radius),
+                2 * self.radius, 2 * self.radius,
+                linewidth=1, edgecolor='red', facecolor='none'
+            )
+            self.ax.add_patch(self.hitbox)
 
         # Direction arrow for movement visualization
         self.direction_arrow, = self.ax.plot([x, x], [y, y], 
                                              color="red", 
                                              linewidth=2, 
                                              marker="o", markersize=3)
+
+    def update(self):
+        # Update hitbox position
+        if Config.DEBUG_MODE:
+            self.hitbox.set_xy((self.pos.x - self.radius, self.pos.y - self.radius))
 
     def draw(self):
         """Draws the circle on the given matplotlib axis."""
@@ -140,5 +156,5 @@ class Circle(BaseObject):
         self.pos.move(bounce_x, bounce_y)
         other.pos.move(-bounce_x, -bounce_y)
 
-        # self.set_new_target()
-        # other.set_new_target()
+        self.set_new_target()
+        other.set_new_target()
