@@ -1,10 +1,10 @@
-from obj import Obj
+from BaseObjects import BaseObject
+
 from SurvivalRL import Config, GameObject
 from matplotlib.transforms import Affine2D
 import matplotlib.patches as patches
 import matplotlib
 import numpy as np
-from scipy.spatial import ConvexHull
 
 
 def _simplex_contains_origin(simplex):
@@ -54,7 +54,7 @@ def _simplex_contains_origin(simplex):
     return False  # Invalid simplex case
 
 
-class Rectangle(Obj):
+class Rectangle(BaseObject):
     """ 
     A Rectangle object that moves and rotates based on its movement direction.
     """
@@ -94,64 +94,11 @@ class Rectangle(Obj):
 
         self.set_new_target()
 
-    def set_new_target(self):
-        """ 
-        Sets a new random target position within a reasonable distance.
-        
-        Ensures that the new target is not too close to the current position.
-        """
-        while True:
-            new_x = np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2)
-            new_y = np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2)
-            distance = np.hypot(new_x - self.pos.x, new_y - self.pos.y)
-
-            if distance > Config.MIN_TARGET_DISTANCE:
-                self.target_x = new_x
-                self.target_y = new_y
-                break
-
     def draw(self):
-        """Draws the rectangle on the given matplotlib axis."""
+        """Draws the circle on the given matplotlib axis."""
         if not hasattr(self, "shape") or self.shape is None:
             self.shape = patches.Rectangle(self.pos(), self.width, self.height, color=self.colour, angle=0)
             self.ax.add_patch(self.shape)
-
-    def update(self, fps, grid):
-        """Updates the rectangle's position and handles collisions."""
-        prev_x, prev_y = self.pos.x, self.pos.y
-        max_speed = self.target_speed * (60 / fps)
-        reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
-
-        if reached_target:
-            self.set_new_target()
-
-        cell_x, cell_y = self.get_grid_cell()
-        possible_collisions = grid.get((cell_x, cell_y), [])
-
-        for other in possible_collisions:
-            if other is not self and self.aabb_collision(other):  # ✅ AABB 체크 먼저
-                self.resolve_collision(other)  # ✅ GJK 제거 → 단순 충돌 해결 적용
-
-
-        dx = self.pos.x - prev_x
-        dy = self.pos.y - prev_y
-        direction_length = np.hypot(dx, dy)
-
-        if direction_length > 0.01:
-            dx /= direction_length
-            dy /= direction_length
-            arrow_length = max(1, direction_length * 5)
-
-            self.direction_arrow.set_data(
-                [self.pos.x + self.width / 2, self.pos.x + self.width / 2 + dx * arrow_length], 
-                [self.pos.y + self.height / 2, self.pos.y + self.height / 2 + dy * arrow_length]
-            )
-
-            self.rotation_angle = np.degrees(np.arctan2(dy, dx))
-            self.apply_rotation()
-
-        self.shape.set_xy(self.pos())
-        self.label.set_position((self.pos.x + self.width / 2, self.pos.y + self.height + 0.5))
 
     """
     Collision System
@@ -167,8 +114,7 @@ class Rectangle(Obj):
 
     def aabb_collision(self, other):
         """Checks AABB for Rectangle vs Rectangle and applies Circle collision detection."""
-        
-        from Objects import Circle  # ✅ 동적 import로 Circular Import 방지
+        from Objects import Circle
 
         if isinstance(other, Rectangle):
             return (
@@ -179,16 +125,14 @@ class Rectangle(Obj):
             )
 
         elif isinstance(other, Circle):
-            # ✅ Circle ↔ Rectangle 충돌 감지 (가장 가까운 거리 검사)
             nearest_x = max(self.pos.x, min(other.pos.x, self.pos.x + self.width))
             nearest_y = max(self.pos.y, min(other.pos.y, self.pos.y + self.height))
             
-            # 원의 중심과 가장 가까운 점 사이의 거리 계산
             dx = other.pos.x - nearest_x
             dy = other.pos.y - nearest_y
             distance_squared = dx**2 + dy**2
 
-            return distance_squared < other.radius ** 2  # ✅ 원 반지름보다 작으면 충돌
+            return distance_squared < other.radius ** 2
 
     def apply_rotation(self):
         """ 
@@ -197,7 +141,7 @@ class Rectangle(Obj):
         Uses `Affine2D` to rotate the rectangle around its center based on movement direction.
         """
         if self.shape is None:
-            return  # ✅ self.shape가 None이면 회전하지 않음
+            return
 
         transform = Affine2D().rotate_deg_around(self.pos.x + self.width / 2, self.pos.y + self.height / 2, self.rotation_angle)
         self.shape.set_transform(transform + self.ax.transData)
@@ -212,7 +156,7 @@ class Rectangle(Obj):
         Returns:
             bool: True if a collision is detected, False otherwise.
         """
-        from Objects import Circle  
+        from BaseObjects import Circle  
 
         if isinstance(other, Rectangle):
             return self._gjk_collision_rectangle(other)

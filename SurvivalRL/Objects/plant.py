@@ -1,4 +1,4 @@
-from Objects import Circle
+from BaseObjects import Circle
 from SurvivalRL import Config, GameObject
 
 import matplotlib.patches as patches

@@ -6,11 +6,11 @@ matplotlib.use("TkAgg") # WSL matplotlib animation renderer
 import numpy as np
 
 # Load game object
-from SurvivalRL import Config, GameObject, Rectangle, Herbivore, Plant
+from SurvivalRL import Config, GameObject, Predator, Herbivore, Plant
 
 target_fps = 30
 interval = 1000 / target_fps
-duration = 10
+duration = 20
 frames = target_fps * duration
 
 
@@ -46,7 +46,7 @@ if __name__=='__main__':
         ))
 
     for i in range(5):
-        game.add_object(Rectangle(
+        game.add_object(Predator(
             game=game,
             ax=ax,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
@@ -55,7 +55,7 @@ if __name__=='__main__':
             height=2,
             target_speed=np.random.uniform(0.1, 0.2),
             colour=np.random.choice(["blue", "green", "purple", "orange"]),
-            name=f"Rect {i+1}"
+            name=f"Predator {i+1}"
         ))
 
     def animate(frame):

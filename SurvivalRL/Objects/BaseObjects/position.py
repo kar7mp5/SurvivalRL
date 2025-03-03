@@ -1,10 +1,7 @@
-import matplotlib
 import numpy as np
 
-from SurvivalRL import GameObject
 
-
-class Position:    
+class Position:
     """ 
     A simple class to store and manage 2D positions. 
     This class allows retrieving and updating position values.
@@ -70,61 +67,3 @@ class Position:
         self.x += direction_x * speed
         self.y += direction_y * speed
         return False
-
-
-class Obj:
-    """ 
-    A parent class for moving objects (shapes).
-    This class provides a base for different graphical objects that can be drawn and updated.
-    """
-
-    def __init__(
-        self, 
-        game: GameObject, 
-        ax: matplotlib.axes.Axes,
-        x: float, y: float, 
-        target_speed: float, 
-        colour: str,
-        name: str=None):
-        """
-        Initializes an Obj with a position and color.
-
-        Args:
-            x (float): Initial x-coordinate of the object.
-            y (float): Initial y-coordinate of the object.
-            colour (str): Color of the object.
-        """
-        self.game = game
-        self.ax = ax
-        self.pos = Position(x, y)
-        self.target_speed = target_speed
-        self.colour = colour
-        self.shape = None # Shape will be defined in the subclasses
-        if name is not None:
-            self.name = name
-
-    def draw(self):
-        """
-        Abstract method to draw the object on a given axis.
-
-        This method must be implemented in subclasses to define how the object is drawn.
-
-        Args:
-            ax (matplotlib.axes.Axes): The axis on which the object will be drawn.
-
-        Raises:
-            NotImplementedError: If called directly from the Obj class.
-        """
-        raise NotImplementedError
-
-    def update(self):
-        """
-        Abstract method to update the object's position based on the current frame.
-
-        Args:
-            frame (int): Current animation frame number.
-
-        Raises:
-            NotImplementedError: If called directly from the Obj class.
-        """
-        raise NotImplementedError

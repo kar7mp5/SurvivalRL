@@ -1,4 +1,4 @@
-from obj import Obj
+from BaseObjects import BaseObject
 from SurvivalRL import Config, GameObject
 
 import matplotlib.patches as patches
@@ -6,7 +6,7 @@ import matplotlib
 import numpy as np
 
 
-class Circle(Obj):
+class Circle(BaseObject):
     """ 
     A Circle class that inherits from Obj.
     This class represents a moving circular object in a 2D space.
@@ -41,12 +41,7 @@ class Circle(Obj):
         self.direction_arrow, = self.ax.plot([x, x], [y, y], color="red", linewidth=2, marker="o", markersize=6)
 
     def draw(self):
-        """
-        Draws the circle on the given matplotlib axis.
-
-        Args:
-            ax (matplotlib.axes.Axes): The axis where the circle will be drawn.
-        """
+        """Draws the circle on the given matplotlib axis."""
         self.shape = patches.Circle(self.pos(), self.radius, color=self.colour)
         self.ax.add_patch(self.shape)
 
@@ -74,7 +69,7 @@ class Circle(Obj):
         Returns:
             bool: True if a collision is detected, False otherwise.
         """
-        from Objects import Rectangle
+        from BaseObjects import Rectangle
 
         if isinstance(other, Circle):
             # Circle-to-Circle collision detection
