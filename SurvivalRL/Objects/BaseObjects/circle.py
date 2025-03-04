@@ -38,10 +38,10 @@ class Circle(BaseObject):
         self.radius = radius
         
         self.label = self.ax.text(x, y + radius + 0.5, 
-                                  f'{self.name} {self.energy}', 
-                                  ha="center", va="bottom", 
-                                  fontsize=10, 
-                                  color="black")
+                    self.name if self.name is not None else '', 
+                    ha="center", va="bottom", 
+                    fontsize=10, 
+                    color="black")
 
         # Always show a red rectangle around the hitbox in debugging mode
         if Config.DEBUG_MODE:
@@ -67,6 +67,10 @@ class Circle(BaseObject):
         """Draws the circle on the given matplotlib axis."""
         self.shape = patches.Circle(self.pos(), self.radius, color=self.colour)
         self.ax.add_patch(self.shape)
+
+    def get_energy(self):
+        """Get energy"""
+        return self.energy
 
     """
     Collision System

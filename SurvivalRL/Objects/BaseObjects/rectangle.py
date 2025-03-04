@@ -95,7 +95,7 @@ class Rectangle(BaseObject):
                                              marker="o", markersize=3)
 
         self.label = self.ax.text(x + width / 2, y + height + 0.5, 
-                                  f'{self.name} {self.energy}', 
+                                  self.name, 
                                   ha="center", va="bottom", 
                                   fontsize=10, 
                                   color="black")

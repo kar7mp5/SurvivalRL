@@ -40,8 +40,7 @@ class BaseObject:
         self.energy = energy
         self.colour = colour # Color used to render the object
         self.shape = None    # To be defined in subclasses
-        if name is not None:
-            self.name = name # Assign a name to the object if provided
+        self.name = name # Assign a name to the object if provided
 
     def update(self):
         """

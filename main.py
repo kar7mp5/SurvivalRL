@@ -20,34 +20,34 @@ if __name__=='__main__':
     game = GameObject(ax_sim)
 
     # Add objects to the simulation
-    # for i in range(5):
-    #     game.add_object(Herbivore(
-    #         game=game,
-    #         ax=ax_sim,
-    #         x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-    #         y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-    #         energy=100,
-    #         radius=np.random.uniform(1, 2),
-    #         target_speed=np.random.uniform(0.1, 0.5),
-    #         colour="blue",
-    #         name=f"Herbivore {i+1}",
-    #     ))
+    for i in range(0):
+        game.add_object(Herbivore(
+            game=game,
+            ax=ax_sim,
+            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            energy=100,
+            radius=np.random.uniform(1, 2),
+            target_speed=np.random.uniform(0.1, 0.5),
+            colour="blue",
+            name=f"Herbivore {i+1}",
+        ))
 
-    # for i in range(3):
-    #     game.add_object(Predator(
-    #         game=game,
-    #         ax=ax_sim,
-    #         x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-    #         y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-    #         energy=100,
-    #         width=np.random.uniform(2, 4),
-    #         height=np.random.uniform(2, 4),
-    #         target_speed=np.random.uniform(0.1, 0.5),
-    #         colour="red",
-    #         name=f"Predator {i+1}",
-    #     ))
+    for i in range(20):
+        game.add_object(Predator(
+            game=game,
+            ax=ax_sim,
+            x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
+            energy=100,
+            width=np.random.uniform(2, 4),
+            height=np.random.uniform(2, 4),
+            target_speed=np.random.uniform(0.1, 0.5),
+            colour="red",
+            name=f"Predator {i+1}",
+        ))
 
-    for i in range(5):
+    for i in range(0):
         game.add_object(Plant(
             game=game,
             ax=ax_sim,
@@ -55,8 +55,7 @@ if __name__=='__main__':
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             energy=100,
             radius=np.random.uniform(1, 2),
-            colour="green",
-            name=f"Plant {i+1}",
+            colour="green"
         ))
 
     # Add real-time count label inside the simulation

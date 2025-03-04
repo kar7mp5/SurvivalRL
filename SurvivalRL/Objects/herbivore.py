@@ -1,14 +1,31 @@
-import matplotlib.axes
 from BaseObjects import Circle
 from SurvivalRL import Config, GameObject
 
-import matplotlib.patches as patches
 import matplotlib
 import numpy as np
+import matplotlib.patches as patches
 
 
 class Herbivore(Circle):
+
+    SHADES = [
+        "#0000FF",  # Blue
+        "#0000CD",  # MediumBlue
+        "#4169E1",  # RoyalBlue
+        "#1E90FF",  # DodgerBlue
+        "#00BFFF",  # DeepSkyBlue
+        "#87CEFA",  # LightSkyBlue
+        "#4682B4",  # SteelBlue
+        "#5F9EA0",  # CadetBlue
+        "#B0C4DE",  # LightSteelBlue
+        "#ADD8E6"   # LightBlue
+    ]
     
+    isDebug: bool = Config.DEBUG_MODE and Config.HERBIVORE
+    
+    FOV_ANGLE = 30
+    FOV_RADIUS = 10
+
     def __init__(
         self, 
         game: GameObject,
@@ -22,7 +39,16 @@ class Herbivore(Circle):
         name: str = None):
         super().__init__(game, ax, x, y, energy, radius, target_speed, colour, name)
 
-        self.test = True
+        # Add FOV fan shape
+        self.fov_patch = patches.Wedge(
+            center=(self.pos.x, self.pos.y),
+            r=self.FOV_RADIUS,
+            theta1=0,
+            theta2=0,
+            color='cyan',
+            alpha=0.3
+        )
+        self.ax.add_patch(self.fov_patch)
 
         self.set_new_target()
 
@@ -43,8 +69,23 @@ class Herbivore(Circle):
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
+        # Detect objects in FOV
+        detected_target = self.detect_in_fov(grid)
+        if detected_target:
+            self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
+
+        reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
+
+        # Draw FOV fan shape
+        self.draw_fov(detected_target is not None)
+
+        # Energy logic
+        self.energy -= 0.1
+        if self.energy <= 0:
+            self.remove()
+
         # Update debug label with movement tracking information
-        if Config.DEBUG_MODE is True:
+        if self.isDebug is True:
             self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
                                 f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
                                 f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
@@ -53,9 +94,9 @@ class Herbivore(Circle):
         if reached_target:
             self.set_new_target()
 
+        # Check collision
         cell_x, cell_y = self.get_grid_cell()
         possible_collisions = grid.get((cell_x, cell_y), [])
-
         for other in possible_collisions:
             if other is not self and self.is_colliding(other):
                 self.resolve_collision(other)
@@ -94,18 +135,21 @@ class Herbivore(Circle):
                 self.target_x = new_x
                 self.target_y = new_y
                 break
-        
+
     def resolve_collision(self, other):
         from Objects import Plant
         super().resolve_collision(other)
-        # if self.test:
-        #     self.division()
-        #     self.test = False
         if isinstance(other, Plant):
-            self.division()
+            self.energy += other.energy * 0.8
             other.remove()
-        self.set_new_target()
         
+        if isinstance(other, Herbivore):
+            energy_sum = self.energy + other.energy
+            if energy_sum >= 100:
+                self.energy -= (self.energy / energy_sum) * 100
+                other.energy -= (other.energy / energy_sum) * 100
+                self.division()
+
     def division(self):
         """
         Creates a new Predator instance (cell division).
@@ -120,7 +164,7 @@ class Herbivore(Circle):
             energy=100,
             radius=self.radius,
             target_speed=np.random.uniform(0.1, 0.3),
-            colour=np.random.choice(["purple", "orange"]),
+            colour=np.random.choice(self.SHADES),
             name=f"Herbivore Clone",
         ))
 
@@ -147,4 +191,64 @@ class Herbivore(Circle):
             if hasattr(self, "hitbox"):
                 self.hitbox.remove()
 
+            if hasattr(self, "fov_patch"):
+                self.fov_patch.remove()
+
             del self  # Delete the object
+    
+    """
+    FOV
+    """
+    def detect_in_fov(self, grid):
+        """
+        Detects the nearest object within the Field of View (FOV).
+
+        Args:
+            grid (dict): Spatial partitioning grid for optimized collision detection.
+
+        Returns:
+            best_target (GameObject or None): The closest detected object within FOV.
+        """
+        cell_x, cell_y = self.get_grid_cell()
+        possible_objects = grid.get((cell_x, cell_y), [])
+
+        best_target = None
+        min_distance = float('inf')
+
+        for obj in possible_objects:
+            if obj is self:
+                continue
+
+            dx = obj.pos.x - self.pos.x
+            dy = obj.pos.y - self.pos.y
+            distance = np.hypot(dx, dy)
+
+            if distance > self.FOV_RADIUS:
+                continue  # Skip objects outside the detection radius
+
+            # Check if the object is within the FOV angle
+            angle = np.degrees(np.arctan2(dy, dx))
+            direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+
+            angle_diff = (angle - direction_angle + 180) % 360 - 180  # Normalize to -180 to 180 degrees
+
+            if abs(angle_diff) <= self.FOV_ANGLE / 2 and distance < min_distance:
+                best_target = obj
+                min_distance = distance
+
+        return best_target
+
+    def draw_fov(self, target_detected):
+        """
+        Visualizes the Field of View (FOV) as a sector (wedge) using matplotlib.patches.Wedge.
+
+        Args:
+            target_detected (bool): Whether an object has been detected within the FOV.
+        """
+        direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+
+        self.fov_patch.set_center((self.pos.x, self.pos.y))
+        self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
+        self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
+        self.fov_patch.set_color("red" if target_detected else "cyan")  # Change color when a target is detected
+        self.fov_patch.set_alpha(0.3)  # Set transparency for visibility
