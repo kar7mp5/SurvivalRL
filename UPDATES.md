@@ -49,3 +49,12 @@
 -   Add Debug Mode.
 
 ![single_simulation_with_population_graph_debug](./docs/single_simulation_with_population_graph_debug.gif)
+
+## POV Detector
+
+**Date: 2025.03.05.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/03d710c4adadf3cd7c79e6b35f0317f1845243c7)
+
+-   Add individual debug mode.
+-   Add POV detector.
+
+![POV_detection](./docs/POV_detection.gif)
