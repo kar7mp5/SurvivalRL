@@ -26,23 +26,42 @@ class Plant(Circle):
         if Config.DEBUG_MODE is True:
             self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
                                 f'Energy: {self.energy:.2f}')
-
             self.label.set_fontsize(6)
 
+        self.energy += 1
+        if self.energy >= 100:
+            self.energy -= 50
+            self.division()
+        
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
 
     def division(self):
         """
-        Divide Cells
+        Creates a new Predator instance (cell division).
+        
+        A new predator with similar properties is added to the game at a random position.
         """
-        return None
+        choice = np.random.choice([-1, 1])
+        random_x = self.radius * choice * (1 + np.random.uniform(0, 1))
+        choice = np.random.choice([-1, 1])
+        random_y = self.radius * choice * (1 + np.random.uniform(0, 1))
+        self.game.add_object(Plant(
+            game=self.game,
+            ax=self.ax,
+            x=self.pos.x + random_x,
+            y=self.pos.x + random_y,
+            energy=self.energy // 2,
+            radius=self.radius,
+            colour=np.random.choice(["purple", "orange"]),
+            name=f"Plant Clone",
+        ))
 
     def set_new_target(self):
         return None
     
     def resolve_collision(self, other):
-        # super().resolve_collision(other)
+        super().resolve_collision(other)
         other.set_new_target()
 
     def remove(self):
