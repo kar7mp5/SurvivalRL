@@ -1,10 +1,10 @@
 # SurvivalRL Updates
 
 -   [**Circle and Rectangle Collision System**](#circle-and-rectangle-collision-system)
-
 -   [**Plant, Herbivore, and Predator**](#plant-herbivore-and-predator)
 -   [**Multi Simulation with Population Graph**](#multi-simulation-with-population-graph)
 -   [**Debug Mode**](#debug-mode)
+-   [**POV Detector**](#pov-detector)
 
 ## Circle and Rectangle Collision System
 
