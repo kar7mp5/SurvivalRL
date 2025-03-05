@@ -5,6 +5,7 @@ matplotlib.use("TkAgg")  # WSL matplotlib animation renderer
 
 import numpy as np
 from collections import deque
+from tqdm import tqdm
 from SurvivalRL import Config, GameObject, Predator, Herbivore, Plant
 
 
@@ -20,20 +21,20 @@ if __name__=='__main__':
     game = GameObject(ax_sim)
 
     # Add objects to the simulation
-    for i in range(0):
+    for i in range(20):
         game.add_object(Herbivore(
             game=game,
             ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            energy=100,
+            energy=50,
             radius=np.random.uniform(1, 2),
             target_speed=np.random.uniform(0.1, 0.5),
             colour="blue",
             name=f"Herbivore {i+1}",
         ))
 
-    for i in range(20):
+    for i in range(2):
         game.add_object(Predator(
             game=game,
             ax=ax_sim,
@@ -47,7 +48,7 @@ if __name__=='__main__':
             name=f"Predator {i+1}",
         ))
 
-    for i in range(0):
+    for i in range(20):
         game.add_object(Plant(
             game=game,
             ax=ax_sim,
@@ -91,21 +92,6 @@ if __name__=='__main__':
 
     def animate(frame):
         """Updates the simulation, object count label, and population plot."""
-        print(frame)
-        # Test for plant duplication at frame 80
-        # if frame%100 == 0:
-        #     for k in range(5):
-        #         game.add_object(Plant(
-        #             game=game,
-        #             ax=ax_sim,
-        #             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-        #             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-        #             energy=100,
-        #             radius=np.random.uniform(1, 3),
-        #             colour="green",
-        #             name=f"Plant {k+1}",
-        #         ))
-
         game.update(Config.TARGET_FPS)  # Update game state
         
         # Count different object types
@@ -146,7 +132,7 @@ if __name__=='__main__':
     ani = animation.FuncAnimation(
         fig=fig, 
         func=animate, 
-        frames=Config.FRAMES, 
+        frames=tqdm(range(Config.FRAMES)), 
         interval=Config.INTERVAL, 
         blit=False)
 

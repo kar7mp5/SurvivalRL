@@ -23,8 +23,8 @@ class Predator(Rectangle):
 
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
-    FOV_ANGLE = 30
-    FOV_RADIUS = 10
+    FOV_ANGLE = 270
+    FOV_RADIUS = 3
 
     def __init__(
         self, 

@@ -51,7 +51,7 @@ class Plant(Circle):
             self.label.set_fontsize(6)
 
 
-        self.energy += 1
+        self.energy += 0.6
         if self.energy >= 100:
             self.energy -= 80
             self.division()
@@ -78,6 +78,9 @@ class Plant(Circle):
             # Updates the direction arrow to indicate movement direction
             self.direction_arrow.set_data([self.pos.x, self.pos.x + dx * arrow_length], 
                                           [self.pos.y, self.pos.y + dy * arrow_length])
+
+        # Ensure objects stay within boundaries
+        self.constrain_within_map()
 
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
@@ -145,3 +148,24 @@ class Plant(Circle):
                 self.hitbox.remove()
 
             del self  # Delete the object
+
+    def constrain_within_map(self):
+        """ 
+        Ensures the circle stays within the map boundaries with a bouncing effect.
+        When hitting a wall, it reverses the movement direction and moves the object accordingly.
+        """
+        # Left boundary collision
+        if self.pos.x - self.radius < -Config.WINDOW_SIZE:
+            self.pos.x = -Config.WINDOW_SIZE + self.radius  # Keep inside boundary
+
+        # Right boundary collision
+        elif self.pos.x + self.radius > Config.WINDOW_SIZE:
+            self.pos.x = Config.WINDOW_SIZE - self.radius
+
+        # Bottom boundary collision
+        if self.pos.y - self.radius < -Config.WINDOW_SIZE:
+            self.pos.y = -Config.WINDOW_SIZE + self.radius
+
+        # Top boundary collision
+        elif self.pos.y + self.radius > Config.WINDOW_SIZE:
+            self.pos.y = Config.WINDOW_SIZE - self.radius

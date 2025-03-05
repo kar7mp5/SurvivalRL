@@ -24,7 +24,7 @@ class Herbivore(Circle):
     isDebug: bool = Config.DEBUG_MODE and Config.HERBIVORE
     
     FOV_ANGLE = 30
-    FOV_RADIUS = 10
+    FOV_RADIUS = 30
 
     def __init__(
         self, 
@@ -65,17 +65,20 @@ class Herbivore(Circle):
             grid (dict): The spatial partitioning grid for optimized collision detection.
         """
         super().update()
+        from Objects import Predator, Plant
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
         # Detect objects in FOV
         detected_target = self.detect_in_fov(grid)
-        if detected_target:
+        if isinstance(detected_target, Predator):
             self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
+            reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
-        reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
-
+        if isinstance(detected_target, Plant):
+            self.set_new_target()
+        
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 
@@ -145,9 +148,9 @@ class Herbivore(Circle):
         
         if isinstance(other, Herbivore):
             energy_sum = self.energy + other.energy
-            if energy_sum >= 100:
-                self.energy -= (self.energy / energy_sum) * 100
-                other.energy -= (other.energy / energy_sum) * 100
+            if energy_sum >= 150:
+                self.energy -= (self.energy / energy_sum) * 150
+                other.energy -= (other.energy / energy_sum) * 150
                 self.division()
 
     def division(self):

@@ -121,9 +121,9 @@ class Circle(BaseObject):
 
     def resolve_collision(self, other):
         """ 
-        Resolves collision by applying a bounce effect and setting a new target.
+        Resolves collision by applying a bounce effect and ensuring objects stay within map boundaries.
 
-        The object moves away from the collision direction and finds a new target.
+        The object moves away from the collision direction and is repositioned inside the map if necessary.
 
         Args:
             other (Obj): The object that this circle has collided with.
