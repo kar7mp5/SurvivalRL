@@ -55,7 +55,7 @@ class Predator(Rectangle):
         
         # Add FOV fan shape
         self.fov_patch = patches.Wedge(
-            center=(self.pos.x, self.pos.y),
+            center=(self.pos.x + self.width/2, self.pos.y + self.height/2),
             r=self.FOV_RADIUS,
             theta1=0,
             theta2=0,
@@ -160,10 +160,7 @@ class Predator(Rectangle):
         super().resolve_collision(other)
         if isinstance(other, Circle):
             other.remove()
-        
-        # if isinstance(other, Predator):
-        #     self.division()
-        
+
     def division(self):
         """
         Creates a new Predator instance (cell division).
@@ -262,7 +259,7 @@ class Predator(Rectangle):
         """
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
 
-        self.fov_patch.set_center((self.pos.x, self.pos.y))
+        self.fov_patch.set_center((self.pos.x + self.width/2, self.pos.y + self.height/2))
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
         self.fov_patch.set_color("red" if target_detected else "cyan")  # Change color when a target is detected
