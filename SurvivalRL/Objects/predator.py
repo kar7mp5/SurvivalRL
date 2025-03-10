@@ -106,8 +106,6 @@ class Predator(Rectangle):
             self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
             reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
         
-        reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
-
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 
@@ -132,11 +130,13 @@ class Predator(Rectangle):
             dy /= direction_length
             arrow_length = max(1, direction_length * 5)
 
+            # Updates the direction arrow to indicate movement direction
             self.direction_arrow.set_data(
                 [self.pos.x + self.width / 2, self.pos.x + self.width / 2 + dx * arrow_length], 
                 [self.pos.y + self.height / 2, self.pos.y + self.height / 2 + dy * arrow_length]
             )
 
+            # Apply rectangle rotation
             self.rotation_angle = np.degrees(np.arctan2(dy, dx))
             self.apply_rotation()
 

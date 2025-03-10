@@ -13,7 +13,7 @@ class Config:
     PLANT_NUM: int = 50
 
     # Text setting
-    DEFAULT_FONT_SIZE: int = 7777777
+    DEFAULT_FONT_SIZE: int = 7
     DEBUG_FONT_SIZE: int = 6
     
     # Debug setting

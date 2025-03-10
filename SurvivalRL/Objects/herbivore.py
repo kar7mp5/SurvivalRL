@@ -66,6 +66,12 @@ class Herbivore(Circle):
             grid (dict): The spatial partitioning grid for optimized collision detection.
         """
         super().update()
+ 
+        # Energy logic
+        self.energy -= 0.1
+        if self.energy <= 0:
+            self.remove()       
+        
         from Objects import Predator, Plant
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
@@ -77,8 +83,8 @@ class Herbivore(Circle):
         else:
             detected_target = self.detect_in_fov(grid)
             self.current_target = detected_target
+
         # Detect objects in FOV
-        # detected_target = self.detect_in_fov(grid)
         if isinstance(detected_target, Predator):
             self.current_target = None
             self.set_new_target()
@@ -89,23 +95,11 @@ class Herbivore(Circle):
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 
-        # Energy logic
-        self.energy -= 0.1
-        if self.energy <= 0:
-            self.remove()
-
-        # Update debug label with movement tracking information
-        if self.isDebug is True:
-            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
-                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
-                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
-            self.label.set_fontsize(6)
-
         if reached_target:
             self.set_new_target()
 
         # Check collision
-        possible_collisions = grid.retrieve_nearby(self) # .get((cell_x, cell_y), [])
+        possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
             if other is not self and self.is_colliding(other):
                 self.resolve_collision(other)
@@ -125,6 +119,13 @@ class Herbivore(Circle):
             # Updates the direction arrow to indicate movement direction
             self.direction_arrow.set_data([self.pos.x, self.pos.x + dx * arrow_length], 
                                           [self.pos.y, self.pos.y + dy * arrow_length])
+
+        # Update debug label with movement tracking information
+        if self.isDebug is True:
+            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_fontsize(6)
 
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
