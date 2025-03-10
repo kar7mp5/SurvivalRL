@@ -23,8 +23,8 @@ class Predator(Rectangle):
 
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
-    FOV_ANGLE = 270
-    FOV_RADIUS = 5
+    FOV_ANGLE = 30
+    FOV_RADIUS = 8
 
     def __init__(
         self, 
@@ -64,6 +64,7 @@ class Predator(Rectangle):
         )
         self.ax.add_patch(self.fov_patch)
 
+        self.current_target = None
         self.set_new_target()
 
     def set_new_target(self):
@@ -90,8 +91,15 @@ class Predator(Rectangle):
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
+        # Check object in FOV
+        if self.current_target and self.is_in_fov(self.current_target):
+            detected_target = self.current_target
+        else:
+            detected_target = self.detect_in_fov(grid)
+            self.current_target = detected_target
+    
         # Detect objects in FOV
-        detected_target = self.detect_in_fov(grid)
+        # detected_target = self.detect_in_fov(grid)
         if isinstance(detected_target, Predator):
             self.set_new_target()  
         elif isinstance(detected_target, Herbivore):
@@ -191,22 +199,14 @@ class Predator(Rectangle):
         if self in self.game.objects:
             self.game.objects.remove(self)  # Remove from the game list
             
-            # Remove from the matplotlib figure
             if self.shape is not None:
                 self.shape.remove()
-
-            # Remove movement arrow if exists
             if hasattr(self, "direction_arrow"):
                 self.direction_arrow.remove()
-
-            # Remove the name label if exists
             if hasattr(self, "label"):
                 self.label.remove()
-
-            # Remove the hitbox if exists
             if hasattr(self, "hitbox"):
                 self.hitbox.remove()
-
             if hasattr(self, "fov_patch"):
                     self.fov_patch.remove()
             
@@ -215,13 +215,34 @@ class Predator(Rectangle):
     """
     FOV
     """
+    def is_in_fov(self, obj):
+        """
+        Checks if the given object is still inside the Predator's FOV.
+        """
+        if obj is None:
+            return False
+
+        dx = obj.pos.x - self.pos.x
+        dy = obj.pos.y - self.pos.y
+        distance_sq = dx * dx + dy * dy  # Euclidean distance squared
+
+        if distance_sq > self.FOV_RADIUS ** 2:
+            return False  # Out of range
+
+        # Calculate FOV degree
+        angle = np.degrees(np.arctan2(dy, dx))
+        direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+        angle_diff = (angle - direction_angle + 180) % 360 - 180  
+
+        return abs(angle_diff) <= self.FOV_ANGLE / 2
+
     def detect_in_fov(self, grid):
         """
         Detects the nearest object within the Field of View (FOV) using Spatial Hash Grid.
         """
         possible_objects = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
         best_target = None
-        min_distance_sq = self.FOV_RADIUS ** 2  # 거리 비교 최적화 (제곱 사용)
+        min_distance_sq = self.FOV_RADIUS ** 2  # Calculate distance
 
         for obj in possible_objects:
             if obj is self:
@@ -229,12 +250,12 @@ class Predator(Rectangle):
 
             dx = obj.pos.x - self.pos.x
             dy = obj.pos.y - self.pos.y
-            distance_sq = dx * dx + dy * dy  # np.hypot 대신 제곱 거리 사용
+            distance_sq = dx * dx + dy * dy  # Rather than np.hypot
 
             if distance_sq > min_distance_sq:
-                continue  # FOV 반지름을 초과하는 객체 무시
+                continue  # Out of FOV range
 
-            # FOV 내 각도 계산
+            # Calculate FOV degree
             angle = np.degrees(np.arctan2(dy, dx))
             direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
             angle_diff = (angle - direction_angle + 180) % 360 - 180  
@@ -257,5 +278,7 @@ class Predator(Rectangle):
         self.fov_patch.set_center((self.pos.x + self.width/2, self.pos.y + self.height/2))
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
-        self.fov_patch.set_color("red" if target_detected else "cyan")  # Change color when a target is detected
+
+        # Change color when a target is detected
+        self.fov_patch.set_color("red" if target_detected else "cyan")  
         self.fov_patch.set_alpha(0.3)  # Set transparency for visibility

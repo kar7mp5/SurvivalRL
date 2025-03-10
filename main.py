@@ -21,7 +21,7 @@ if __name__=='__main__':
     game = GameObject(ax_sim)
 
     # Add objects to the simulation
-    for i in range(Config.Herbi_NUM):
+    for i in range(Config.HERBI_NUM):
         game.add_object(Herbivore(
             game=game,
             ax=ax_sim,

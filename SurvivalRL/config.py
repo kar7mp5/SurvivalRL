@@ -8,7 +8,7 @@ class Config:
     MIN_TARGET_DISTANCE: int = 5
 
     # Number of creatures
-    Herbi_NUM: int = 20
+    HERBI_NUM: int = 20
     PRED_NUM: int = 3
     PLANT_NUM: int = 50
 
