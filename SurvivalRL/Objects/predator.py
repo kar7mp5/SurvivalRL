@@ -86,6 +86,7 @@ class Predator(Rectangle):
     def update(self, fps, grid):
         """Updates the rectangle's position and handles collisions."""
         super().update()
+
         from Objects import Herbivore
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
@@ -99,7 +100,6 @@ class Predator(Rectangle):
             self.current_target = detected_target
     
         # Detect objects in FOV
-        # detected_target = self.detect_in_fov(grid)
         if isinstance(detected_target, Predator):
             self.set_new_target()  
         elif isinstance(detected_target, Herbivore):
@@ -111,19 +111,11 @@ class Predator(Rectangle):
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 
-        # Update debug label with movement tracking information
-        if self.isDebug is True:
-            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
-                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
-                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
-            self.label.set_fontsize(6)
-
         if reached_target:
             self.set_new_target()
 
         # Check collision
-        # cell_x, cell_y = self.get_grid_cell()
-        possible_collisions = grid.retrieve_nearby(self) # .get((cell_x, cell_y), [])
+        possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
             if other is not self and self.aabb_collision(other):
                 self.resolve_collision(other)
@@ -147,6 +139,13 @@ class Predator(Rectangle):
 
             self.rotation_angle = np.degrees(np.arctan2(dy, dx))
             self.apply_rotation()
+
+        # Update debug label with movement tracking information
+        if self.isDebug is True:
+            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_fontsize(Config.DEBUG_FONT_SIZE)
 
         self.shape.set_xy(self.pos())
         self.label.set_position((self.pos.x + self.width / 2, self.pos.y + self.height + 0.5))

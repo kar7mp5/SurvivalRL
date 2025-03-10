@@ -97,7 +97,7 @@ class Rectangle(BaseObject):
         self.label = self.ax.text(x + width / 2, y + height + 0.5, 
                                   self.name, 
                                   ha="center", va="bottom", 
-                                  fontsize=10, 
+                                  fontsize=Config.DEFAULT_FONT_SIZE, 
                                   color="black")
 
         # Always show a red rectangle around the hitbox in debugging mode

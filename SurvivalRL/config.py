@@ -12,6 +12,10 @@ class Config:
     PRED_NUM: int = 3
     PLANT_NUM: int = 50
 
+    # Text setting
+    DEFAULT_FONT_SIZE: int = 7777777
+    DEBUG_FONT_SIZE: int = 6
+    
     # Debug setting
     DEBUG_MODE: bool = False
     PREDATOR: bool = False

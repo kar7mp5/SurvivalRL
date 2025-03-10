@@ -40,7 +40,7 @@ class Circle(BaseObject):
         self.label = self.ax.text(x, y + radius + 0.5, 
                     self.name if self.name is not None else '', 
                     ha="center", va="bottom", 
-                    fontsize=10, 
+                    fontsize=Config.DEFAULT_FONT_SIZE, 
                     color="black")
 
         # Always show a red rectangle around the hitbox in debugging mode

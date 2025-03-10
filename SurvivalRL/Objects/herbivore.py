@@ -259,6 +259,36 @@ class Herbivore(Circle):
 
         return best_target
 
+    def detect_in_fov(self, grid):
+        """
+        Detects the nearest object within the Field of View (FOV) using Spatial Hash Grid.
+        """
+        possible_objects = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
+        best_target = None
+        min_distance_sq = self.FOV_RADIUS ** 2  # Calculate distance
+
+        for obj in possible_objects:
+            if obj is self:
+                continue
+
+            dx = obj.pos.x - self.pos.x
+            dy = obj.pos.y - self.pos.y
+            distance_sq = dx * dx + dy * dy  # Rather than np.hypot
+
+            if distance_sq > min_distance_sq:
+                continue  # Out of FOV range
+
+            # Calculate FOV degree
+            angle = np.degrees(np.arctan2(dy, dx))
+            direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+            angle_diff = (angle - direction_angle + 180) % 360 - 180  
+
+            if abs(angle_diff) <= self.FOV_ANGLE / 2 and distance_sq < min_distance_sq:
+                best_target = obj
+                min_distance_sq = distance_sq
+
+        return best_target
+
     def draw_fov(self, target_detected):
         """
         Visualizes the Field of View (FOV) as a sector (wedge) using matplotlib.patches.Wedge.
@@ -268,10 +298,10 @@ class Herbivore(Circle):
         """
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
 
-        self.fov_patch.set_center((self.pos.x + self.width/2, self.pos.y + self.height/2))
+        self.fov_patch.set_center((self.pos.x, self.pos.y))
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
 
         # Change color when a target is detected
-        self.fov_patch.set_color("red" if target_detected else "cyan")  
+        self.fov_patch.set_color("red" if target_detected else "cyan")
         self.fov_patch.set_alpha(0.3)  # Set transparency for visibility
