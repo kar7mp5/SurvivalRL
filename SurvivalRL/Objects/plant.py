@@ -35,7 +35,7 @@ class Plant(Circle):
 
         # self.set_new_target()
 
-    def update(self, fps, grid):        
+    def update(self, fps, grid):
         # Update debug label with movement tracking information
         super().update()
         prev_x, prev_y = self.pos.x, self.pos.y
@@ -57,8 +57,8 @@ class Plant(Circle):
             self.division()
 
         # Check collision
-        cell_x, cell_y = self.get_grid_cell()
-        possible_collisions = grid.get((cell_x, cell_y), [])
+        # cell_x, cell_y = self.get_grid_cell()
+        possible_collisions = grid.retrieve_nearby(self) # .get((cell_x, cell_y), [])
         for other in possible_collisions:
             if other is not self and self.is_colliding(other):
                 self.resolve_collision(other)

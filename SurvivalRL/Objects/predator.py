@@ -24,7 +24,7 @@ class Predator(Rectangle):
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
     FOV_ANGLE = 270
-    FOV_RADIUS = 3
+    FOV_RADIUS = 5
 
     def __init__(
         self, 
@@ -85,15 +85,19 @@ class Predator(Rectangle):
     def update(self, fps, grid):
         """Updates the rectangle's position and handles collisions."""
         super().update()
+        from Objects import Herbivore
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
         # Detect objects in FOV
         detected_target = self.detect_in_fov(grid)
-        if detected_target:
+        if isinstance(detected_target, Predator):
+            self.set_new_target()  
+        elif isinstance(detected_target, Herbivore):
             self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
-
+            reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
+        
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
         # Draw FOV fan shape
@@ -110,8 +114,8 @@ class Predator(Rectangle):
             self.set_new_target()
 
         # Check collision
-        cell_x, cell_y = self.get_grid_cell()
-        possible_collisions = grid.get((cell_x, cell_y), [])
+        # cell_x, cell_y = self.get_grid_cell()
+        possible_collisions = grid.retrieve_nearby(self) # .get((cell_x, cell_y), [])
         for other in possible_collisions:
             if other is not self and self.aabb_collision(other):
                 self.resolve_collision(other)
@@ -213,19 +217,11 @@ class Predator(Rectangle):
     """
     def detect_in_fov(self, grid):
         """
-        Detects the nearest object within the Field of View (FOV).
-
-        Args:
-            grid (dict): Spatial partitioning grid for optimized collision detection.
-
-        Returns:
-            best_target (GameObject or None): The closest detected object within FOV.
+        Detects the nearest object within the Field of View (FOV) using Spatial Hash Grid.
         """
-        cell_x, cell_y = self.get_grid_cell()
-        possible_objects = grid.get((cell_x, cell_y), [])
-
+        possible_objects = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
         best_target = None
-        min_distance = float('inf')
+        min_distance_sq = self.FOV_RADIUS ** 2  # 거리 비교 최적화 (제곱 사용)
 
         for obj in possible_objects:
             if obj is self:
@@ -233,20 +229,19 @@ class Predator(Rectangle):
 
             dx = obj.pos.x - self.pos.x
             dy = obj.pos.y - self.pos.y
-            distance = np.hypot(dx, dy)
+            distance_sq = dx * dx + dy * dy  # np.hypot 대신 제곱 거리 사용
 
-            if distance > self.FOV_RADIUS:
-                continue  # Skip objects outside the detection radius
+            if distance_sq > min_distance_sq:
+                continue  # FOV 반지름을 초과하는 객체 무시
 
-            # Check if the object is within the FOV angle
+            # FOV 내 각도 계산
             angle = np.degrees(np.arctan2(dy, dx))
             direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+            angle_diff = (angle - direction_angle + 180) % 360 - 180  
 
-            angle_diff = (angle - direction_angle + 180) % 360 - 180  # Normalize to -180 to 180 degrees
-
-            if abs(angle_diff) <= self.FOV_ANGLE / 2 and distance < min_distance:
+            if abs(angle_diff) <= self.FOV_ANGLE / 2 and distance_sq < min_distance_sq:
                 best_target = obj
-                min_distance = distance
+                min_distance_sq = distance_sq
 
         return best_target
 
