@@ -21,7 +21,7 @@ if __name__=='__main__':
     game = GameObject(ax_sim)
 
     # Add objects to the simulation
-    for i in range(20):
+    for i in range(Config.Herbi_NUM):
         game.add_object(Herbivore(
             game=game,
             ax=ax_sim,
@@ -34,7 +34,7 @@ if __name__=='__main__':
             name=f"Herbivore {i+1}",
         ))
 
-    for i in range(2):
+    for i in range(Config.PRED_NUM):
         game.add_object(Predator(
             game=game,
             ax=ax_sim,
@@ -48,7 +48,7 @@ if __name__=='__main__':
             name=f"Predator {i+1}",
         ))
 
-    for i in range(20):
+    for i in range(Config.PLANT_NUM):
         game.add_object(Plant(
             game=game,
             ax=ax_sim,

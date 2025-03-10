@@ -7,8 +7,13 @@ class Config:
     GRID_SIZE: int = WINDOW_SIZE // 10
     MIN_TARGET_DISTANCE: int = 5
 
+    # Number of creatures
+    Herbi_NUM: int = 20
+    PRED_NUM: int = 3
+    PLANT_NUM: int = 50
+
     # Debug setting
-    DEBUG_MODE: bool = True
+    DEBUG_MODE: bool = False
     PREDATOR: bool = False
     HERBIVORE: bool = True
     PLANT: bool = False
