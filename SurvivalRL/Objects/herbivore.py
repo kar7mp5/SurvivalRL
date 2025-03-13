@@ -24,7 +24,7 @@ class Herbivore(Circle):
     isDebug: bool = Config.DEBUG_MODE and Config.HERBIVORE
     
     FOV_ANGLE = 270
-    FOV_RADIUS = 7
+    FOV_RADIUS = 8
 
     def __init__(
         self, 
@@ -147,13 +147,13 @@ class Herbivore(Circle):
                 break
 
     def resolve_collision(self, other):
-        from Objects import Plant
         super().resolve_collision(other)
+
+        from Objects import Plant
         if isinstance(other, Plant):
             self.energy += other.energy * 0.8
             other.remove()
-        
-        if isinstance(other, Herbivore):
+        elif isinstance(other, Herbivore):
             energy_sum = self.energy + other.energy
             if energy_sum >= 150:
                 self.energy -= (self.energy / energy_sum) * 150
@@ -175,8 +175,7 @@ class Herbivore(Circle):
             radius=self.radius,
             target_speed=np.random.uniform(0.1, 0.3),
             colour=np.random.choice(self.SHADES),
-            name=f"Herbivore Clone",
-        ))
+         ))
 
     def remove(self):
         """
