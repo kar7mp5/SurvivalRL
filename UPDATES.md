@@ -5,6 +5,7 @@
 -   [**Multi Simulation with Population Graph**](#multi-simulation-with-population-graph)
 -   [**Debug Mode**](#debug-mode)
 -   [**POV Detector**](#pov-detector)
+-   [**Spatial Hash Grid (Collision)**](#spatial-hash-grid-collision)
 
 ## Circle and Rectangle Collision System
 
@@ -50,12 +51,12 @@
 
 ![single_simulation_with_population_graph_debug](./docs/single_simulation_with_population_graph_debug.gif)
 
-## POV Detector
+## FOV Detector
 
 **Date: 2025.03.05.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/03d710c4adadf3cd7c79e6b35f0317f1845243c7)
 
 -   Add individual debug mode.
--   Add POV detector.
+-   Add FOV detector.
 
 ![POV_detection](./docs/POV_detection.gif)
 
