@@ -2,9 +2,11 @@
 
 ## Table of Contents
 
--   [Getting Started](#getting-started)
--   [Updates](#updates)
--   [LICENSE](#license)
+-   [**Getting Started**](#getting-started)
+    -   [Install libraries](#install-libraries)
+    -   [Run the simulation](#run-the-simulation)
+-   [**Updates**](#updates)
+-   [**LICENSE**](#license)
 
 ## Getting Started
 
