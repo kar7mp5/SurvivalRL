@@ -24,8 +24,11 @@ class Predator(Rectangle):
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
     FOV_ANGLE = 30
-    FOV_RADIUS = 8
-
+    FOV_RADIUS = 10
+    DIVISION_UNIT = 250
+    ENERGY_UNIT = 500
+    GRID_UPDATE_THRESHOLD = 10
+ 
     def __init__(
         self, 
         game: GameObject, 
@@ -55,7 +58,7 @@ class Predator(Rectangle):
         
         # Add FOV fan shape
         self.fov_patch = patches.Wedge(
-            center=(self.pos.x + self.width/2, self.pos.y + self.height/2),
+            center=(self.pos.x + self.init_width/2, self.pos.y + self.init_height/2),
             r=self.FOV_RADIUS,
             theta1=0,
             theta2=0,
@@ -86,6 +89,21 @@ class Predator(Rectangle):
     def update(self, fps, grid):
         """Updates the rectangle's position and handles collisions."""
         super().update()
+
+        # Energy logic
+        self.energy -= 0.1
+        if self.energy <= 0:
+            self.remove()
+
+        # Adjust size based on energy level
+        self.width = max(1, self.init_width * self.energy / self.ENERGY_UNIT)
+        self.height = max(1, self.init_height * self.energy / self.ENERGY_UNIT)
+        
+        # Update grid position only if the size change is significant
+        if (abs(self.width - self.last_grid_width) >= self.GRID_UPDATE_THRESHOLD or
+            abs(self.height - self.last_grid_height) >= self.GRID_UPDATE_THRESHOLD):
+            self.last_grid_width = self.width
+            self.last_grid_height = self.height
 
         from Objects import Herbivore
         prev_x, prev_y = self.pos.x, self.pos.y
@@ -167,10 +185,23 @@ class Predator(Rectangle):
                 break
 
     def resolve_collision(self, other):
-        from BaseObjects import Circle
         super().resolve_collision(other)
-        if isinstance(other, Circle):
+
+        from Objects import Herbivore, Plant
+        # Consume energy from entities
+        if isinstance(other, Herbivore):
+            self.energy += other.energy * 0.9
             other.remove()
+        elif isinstance(other, Plant):
+            self.energy += other.energy * 0.5
+            other.remove()
+        # Duplicate self
+        elif isinstance(other, Predator):
+            energy_sum = self.energy + other.energy
+            if energy_sum >= self.DIVISION_UNIT:
+                self.energy -= (self.energy / energy_sum) * self.DIVISION_UNIT 
+                other.energy -= (other.energy / energy_sum) * self.DIVISION_UNIT
+                self.division()
 
     def division(self):
         """
@@ -188,7 +219,6 @@ class Predator(Rectangle):
             height=self.height,
             target_speed=np.random.uniform(0.1, 0.3),
             colour=np.random.choice(self.SHADES),
-            name=f"Predator Clone"
         ))
 
     def remove(self):
@@ -267,10 +297,7 @@ class Predator(Rectangle):
 
     def draw_fov(self, target_detected):
         """
-        Visualizes the Field of View (FOV) as a sector (wedge) using matplotlib.patches.Wedge.
-
-        Args:
-            target_detected (bool): Whether an object has been detected within the FOV.
+        Visualizes the Field of View (FOV) as a sector (wedge).
         """
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
 
@@ -278,6 +305,10 @@ class Predator(Rectangle):
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
 
+        # Adjust FOV radius based on energy level
+        adjusted_fov_radius = max(5, self.FOV_RADIUS * (self.energy / self.ENERGY_UNIT))
+        self.fov_patch.set_radius(adjusted_fov_radius)
+        
         # Change color when a target is detected
-        self.fov_patch.set_color("red" if target_detected else "cyan")  
-        self.fov_patch.set_alpha(0.3)  # Set transparency for visibility
+        self.fov_patch.set_color("red" if target_detected else "cyan")
+        self.fov_patch.set_alpha(0.3) # Set transparency fro visibility

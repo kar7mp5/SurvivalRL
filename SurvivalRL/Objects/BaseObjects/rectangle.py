@@ -85,8 +85,9 @@ class Rectangle(BaseObject):
         """
         super().__init__(game, ax, x, y, energy, target_speed, colour, name)
 
-        self.width = width
-        self.height = height
+        self.width, self.height = width, height
+        self.init_width, self.init_height = width, height
+        self.last_grid_width, self.last_grid_height = width, height
         self.rotation_angle = 0  
 
         self.direction_arrow, = self.ax.plot([x, x], [y, y], 
@@ -104,7 +105,7 @@ class Rectangle(BaseObject):
         if Config.DEBUG_MODE:
             self.hitbox = patches.Rectangle(
                 (self.pos.x, self.pos.y),
-                self.width, self.height,
+                self.init_width, self.init_height,
                 linewidth=1, edgecolor='red', facecolor='none'
             )
             self.ax.add_patch(self.hitbox)
@@ -115,6 +116,12 @@ class Rectangle(BaseObject):
         # Update hitbox position
         if Config.DEBUG_MODE:
             self.hitbox.set_xy((self.pos.x, self.pos.y))
+            self.hitbox.set_width(self.width)
+            self.hitbox.set_height(self.height)
+        
+        self.shape.set_width(self.width)
+        self.shape.set_height(self.height)
+        self.shape.set_xy((self.pos.x, self.pos.y))
 
     def draw(self):
         """Draws the circle on the given matplotlib axis."""
