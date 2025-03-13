@@ -27,11 +27,10 @@ if __name__=='__main__':
             ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            energy=50,
+            energy=100,
             radius=np.random.uniform(1, 2),
             target_speed=np.random.uniform(0.1, 0.5),
             colour="blue",
-            name=f"Herbivore {i+1}",
         ))
 
     for i in range(Config.PRED_NUM):
@@ -40,12 +39,11 @@ if __name__=='__main__':
             ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-            energy=100,
+            energy=500,
             width=np.random.uniform(2, 4),
             height=np.random.uniform(2, 4),
             target_speed=np.random.uniform(0.1, 0.5),
             colour="red",
-            name=f"Predator {i+1}",
         ))
 
     for i in range(Config.PLANT_NUM):
