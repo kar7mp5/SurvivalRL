@@ -1,11 +1,11 @@
 # SurvivalRL Updates
 
--   [**Circle and Rectangle Collision System**](#circle-and-rectangle-collision-system)
--   [**Plant, Herbivore, and Predator**](#plant-herbivore-and-predator)
--   [**Multi Simulation with Population Graph**](#multi-simulation-with-population-graph)
--   [**Debug Mode**](#debug-mode)
--   [**POV Detector**](#pov-detector)
--   [**Spatial Hash Grid (Collision)**](#spatial-hash-grid-collision)
+1.  [**Circle and Rectangle Collision System**](#circle-and-rectangle-collision-system)
+2.  [**Plant, Herbivore, and Predator**](#plant-herbivore-and-predator)
+3.  [**Multi Simulation with Population Graph**](#multi-simulation-with-population-graph)
+4.  [**Debug Mode**](#debug-mode)
+5.  [**POV Detector**](#pov-detector)
+6.  [**Spatial Hash Grid (Collision)**](#spatial-hash-grid-collision)
 
 ## Circle and Rectangle Collision System
 
