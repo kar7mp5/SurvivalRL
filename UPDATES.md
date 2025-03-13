@@ -58,3 +58,12 @@
 -   Add POV detector.
 
 ![POV_detection](./docs/POV_detection.gif)
+
+## Spatial Hash Grid (Collision)
+
+**Data: 2025.03.13.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/db75f806d56dd9e86ce1deced4907db306a688ee)
+
+-   At first, I tried using a QuadTree for object collision detection. It worked well for collisions, but I stopped using it due to issues with FOV detection. So, I switched to a Spatial Hash Grid instead.
+-   I set the predator object's size to change based on its energy level.
+
+![spatial_hash_grid](./docs/spatial_hash_grid.gif)
