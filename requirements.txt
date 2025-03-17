@@ -2,3 +2,9 @@ numpy
 matplotlib
 scipy
 tqdm
+
+# Reinforcement learning
+gym
+stable-baselines3
+torch
+shimmy>=2.0
