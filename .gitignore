@@ -1,3 +1,9 @@
+# Train results
+result.mp4
+train.mp4
+infer.mp4
+ppo_survival.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
