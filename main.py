@@ -10,6 +10,7 @@ from SurvivalRL import Config, GameObject, Predator, Herbivore, Plant
 
 
 if __name__=='__main__':
+    np.random.seed(41)
     # Set up the figure layout (one simulation + one population plot)
     fig, (ax_sim, ax_plot) = plt.subplots(1, 2, figsize=(12, 6))
 
