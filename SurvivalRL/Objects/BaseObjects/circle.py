@@ -34,9 +34,11 @@ class Circle(BaseObject):
             name (str, optional): Name label displayed above the circle. Defaults to None.
         """
         super().__init__(game, ax, x, y, energy, target_speed, colour, name)
-        
-        self.radius = radius
-        
+
+        self.radius = radius        
+        self.init_radius = radius
+        self.last_grid_radius = radius
+
         self.label = self.ax.text(x, y + radius + 0.5, 
                     self.name if self.name is not None else '', 
                     ha="center", va="bottom", 
@@ -62,6 +64,9 @@ class Circle(BaseObject):
         # Update hitbox position
         if Config.DEBUG_MODE:
             self.hitbox.set_xy((self.pos.x - self.radius, self.pos.y - self.radius))
+
+        self.shape.set_radius(self.radius)
+        # self.shape.set_xy((self.pos.x, self.pos.y))
 
     def draw(self):
         """Draws the circle on the given matplotlib axis."""

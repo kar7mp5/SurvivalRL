@@ -27,7 +27,7 @@ class Predator(Rectangle):
     FOV_RADIUS = 10
     DIVISION_UNIT = 250
     ENERGY_UNIT = 500
-    GRID_UPDATE_THRESHOLD = 10
+    GRID_UPDATE_THRESHOLD = 1
  
     def __init__(
         self, 

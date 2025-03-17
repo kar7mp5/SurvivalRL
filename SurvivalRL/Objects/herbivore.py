@@ -25,6 +25,8 @@ class Herbivore(Circle):
     
     FOV_ANGLE = 270
     FOV_RADIUS = 8
+    ENERGY_UNIT = 500
+    GRID_UPDATE_THRESHOLD = 1
 
     def __init__(
         self, 
@@ -70,8 +72,15 @@ class Herbivore(Circle):
         # Energy logic
         self.energy -= 0.1
         if self.energy <= 0:
-            self.remove()       
+            self.remove()
+
+        self.radius = max(1, self.init_radius * self.energy / self.ENERGY_UNIT)
         
+        # Update grid position only if the size change is significant
+        if abs(self.radius - self.last_grid_radius) >= self.GRID_UPDATE_THRESHOLD:
+            self.last_grid_radius = self.radius
+
+
         from Objects import Predator, Plant
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
@@ -125,7 +134,7 @@ class Herbivore(Circle):
             self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
                                 f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
                                 f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
-            self.label.set_fontsize(6)
+            self.label.set_fontsize(Config.DEBUG_FONT_SIZE)
 
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
@@ -187,19 +196,12 @@ class Herbivore(Circle):
             # Remove from the matplotlib figure
             if self.shape is not None:
                 self.shape.remove()
-
-            # Remove movement arrow if exists
             if hasattr(self, "direction_arrow"):
                 self.direction_arrow.remove()
-
-            # Remove the name label if exists
             if hasattr(self, "label"):
                 self.label.remove()
-            
-            # Remove the hitbox if exists
             if hasattr(self, "hitbox"):
                 self.hitbox.remove()
-
             if hasattr(self, "fov_patch"):
                 self.fov_patch.remove()
 

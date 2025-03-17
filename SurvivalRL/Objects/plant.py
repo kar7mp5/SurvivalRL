@@ -51,7 +51,7 @@ class Plant(Circle):
             self.label.set_fontsize(6)
 
 
-        self.energy += 0.6
+        self.energy += 0.4
         if self.energy >= 100:
             self.energy -= 80
             self.division()
@@ -130,20 +130,13 @@ class Plant(Circle):
         """
         if self in self.game.objects:
             self.game.objects.remove(self)  # Remove from the game list
-            
-            # Remove from the matplotlib figure
+
             if self.shape is not None:
                 self.shape.remove()
-
-            # Remove movement arrow if exists
             if hasattr(self, "direction_arrow"):
                 self.direction_arrow.remove()
-
-            # Remove the name label if exists
             if hasattr(self, "label"):
                 self.label.remove()
-            
-            # Remove the hitbox if exists
             if hasattr(self, "hitbox"):
                 self.hitbox.remove()
 
