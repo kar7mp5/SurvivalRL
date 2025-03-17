@@ -38,7 +38,7 @@ class Plant(Circle):
     def update(self, fps, grid):
         # Update debug label with movement tracking information
         super().update()
-        prev_x, prev_y = self.pos.x, self.pos.y
+        # prev_x, prev_y = self.pos.x, self.pos.y
 
         # Update debug label with movement tracking information
         if self.isDebug is True:
@@ -66,18 +66,18 @@ class Plant(Circle):
             else:
                 self.shape.set_color(self.colour)
 
-        dx = self.pos.x - prev_x
-        dy = self.pos.y - prev_y
-        direction_length = np.hypot(dx, dy)
+        # dx = self.pos.x - prev_x
+        # dy = self.pos.y - prev_y
+        # direction_length = np.hypot(dx, dy)
 
-        if direction_length > 0.01:
-            dx /= direction_length
-            dy /= direction_length
-            arrow_length = max(1, direction_length * 5)
+        # if direction_length > 0.01:
+        #     dx /= direction_length
+        #     dy /= direction_length
+        #     arrow_length = max(1, direction_length * 5)
 
-            # Updates the direction arrow to indicate movement direction
-            self.direction_arrow.set_data([self.pos.x, self.pos.x + dx * arrow_length], 
-                                          [self.pos.y, self.pos.y + dy * arrow_length])
+        #     # Updates the direction arrow to indicate movement direction
+        #     self.direction_arrow.set_data([self.pos.x, self.pos.x + dx * arrow_length], 
+        #                                   [self.pos.y, self.pos.y + dy * arrow_length])
 
         # Ensure objects stay within boundaries
         self.constrain_within_map()

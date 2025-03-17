@@ -24,8 +24,8 @@ class Predator(Rectangle):
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
     FOV_ANGLE = 30
-    FOV_RADIUS = 10
-    DIVISION_UNIT = 250
+    FOV_RADIUS = 6
+    DIVISION_UNIT = 300
     ENERGY_UNIT = 500
     GRID_UPDATE_THRESHOLD = 1
  
@@ -96,9 +96,9 @@ class Predator(Rectangle):
             self.remove()
 
         # Adjust size based on energy level
-        self.width = max(1, self.init_width * self.energy / self.ENERGY_UNIT)
-        self.height = max(1, self.init_height * self.energy / self.ENERGY_UNIT)
-        
+        self.width = max(2, self.init_width * self.energy / self.ENERGY_UNIT)
+        self.height = max(2, self.init_height * self.energy / self.ENERGY_UNIT)
+
         # Update grid position only if the size change is significant
         if (abs(self.width - self.last_grid_width) >= self.GRID_UPDATE_THRESHOLD or
             abs(self.height - self.last_grid_height) >= self.GRID_UPDATE_THRESHOLD):
@@ -126,6 +126,7 @@ class Predator(Rectangle):
             reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
         """
         detected_target = None
+
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 
@@ -216,7 +217,7 @@ class Predator(Rectangle):
             ax=self.ax,
             x=self.pos.x + np.random.uniform(-5, 5),
             y=self.pos.x + np.random.uniform(-5, 5),
-            energy=100,
+            energy=self.DIVISION_UNIT,
             width=self.width,
             height=self.height,
             target_speed=np.random.uniform(0.1, 0.3),

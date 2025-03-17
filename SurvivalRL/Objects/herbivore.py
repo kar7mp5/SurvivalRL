@@ -24,9 +24,10 @@ class Herbivore(Circle):
     isDebug: bool = Config.DEBUG_MODE and Config.HERBIVORE
     
     FOV_ANGLE = 270
-    FOV_RADIUS = 8
+    FOV_RADIUS = 4
     ENERGY_UNIT = 500
     GRID_UPDATE_THRESHOLD = 1
+    DIVISION_UNIT = 250
 
     def __init__(
         self, 
@@ -168,9 +169,9 @@ class Herbivore(Circle):
             other.remove()
         elif isinstance(other, Herbivore):
             energy_sum = self.energy + other.energy
-            if energy_sum >= 150:
-                self.energy -= (self.energy / energy_sum) * 150
-                other.energy -= (other.energy / energy_sum) * 150
+            if energy_sum >= self.DIVISION_UNIT:
+                self.energy -= (self.energy / energy_sum) * self.DIVISION_UNIT
+                other.energy -= (other.energy / energy_sum) * self.DIVISION_UNIT
                 self.division()
 
     def division(self):
@@ -184,7 +185,7 @@ class Herbivore(Circle):
             ax=self.ax,
             x=self.pos.x + np.random.uniform(-1, 1),
             y=self.pos.x + np.random.uniform(-1, 1),
-            energy=100,
+            energy=self.DIVISION_UNIT,
             radius=self.radius,
             target_speed=np.random.uniform(0.1, 0.3),
             colour=np.random.choice(self.SHADES),

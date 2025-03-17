@@ -58,7 +58,7 @@ class Circle(BaseObject):
         self.direction_arrow, = self.ax.plot([x, x], [y, y], 
                                              color="red", 
                                              linewidth=2, 
-                                             marker="o", markersize=3)
+                                             marker="o", markersize=2)
 
     def update(self):
         # Update hitbox position

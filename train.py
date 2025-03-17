@@ -1,27 +1,27 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 from stable_baselines3 import PPO
-from SurvivalRL import SurvivalEnv
+from SurvivalRL import Config, SurvivalEnv
 from tqdm import tqdm
-
-
-class TqdmCallback:
-    def __init__(self, progress_bar):
-        self.progress_bar = progress_bar
-
-    def __call__(self, locals_, globals_):
-        self.progress_bar.update(1)
-
 
 if __name__ == '__main__':
     env = SurvivalEnv()
-    model = PPO("MlpPolicy", env, verbose=0)  # Remove defaul log verbose=0
+    model = PPO("MlpPolicy", env, verbose=0)  # Keep verbose=0 to avoid log spam
 
-    total_timesteps = 100000
+    total_timesteps = Config.FRAMES
+    batch_size = max(1024, total_timesteps // 100)  # Adjust batch size dynamically
     progress_bar = tqdm(total=total_timesteps, desc="Training Progress", unit="step")
 
-    model.learn(total_timesteps=total_timesteps, callback=TqdmCallback(progress_bar))
+    # Train in larger batches instead of 1-step increments
+    for _ in range(0, total_timesteps, batch_size):
+        steps = min(batch_size, total_timesteps - progress_bar.n)  # Handle last batch
+        model.learn(total_timesteps=steps, reset_num_timesteps=False)
+        progress_bar.update(steps)
+
     model.save("ppo_survival")
 
     progress_bar.close()
 
-    env.render(save_as="train.mp4")
+    # env.render(save_as="train.mp4")
     env.close()

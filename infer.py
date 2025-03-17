@@ -1,5 +1,8 @@
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 from stable_baselines3 import PPO
-from SurvivalRL import SurvivalEnv
+from SurvivalRL import Config, SurvivalEnv
 from tqdm import tqdm
 
 # Initialize the environment
@@ -13,7 +16,7 @@ obs = env.reset()
 done = False
 
 # Set total frames for visualization (adjust if needed)
-total_frames = 1000
+total_frames = Config.FRAMES
 progress_bar = tqdm(total=total_frames, desc="Inference Progress", unit="frame")
 
 # Run inference loop

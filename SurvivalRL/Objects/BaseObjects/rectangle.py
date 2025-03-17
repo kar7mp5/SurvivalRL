@@ -93,7 +93,7 @@ class Rectangle(BaseObject):
         self.direction_arrow, = self.ax.plot([x, x], [y, y], 
                                              color="brown", 
                                              linewidth=2, 
-                                             marker="o", markersize=3)
+                                             marker="o", markersize=2)
 
         self.label = self.ax.text(x + width / 2, y + height + 0.5, 
                                   self.name, 
