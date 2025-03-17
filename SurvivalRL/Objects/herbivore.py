@@ -86,6 +86,7 @@ class Herbivore(Circle):
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
         
+        """
         # Check object in FOV
         if self.current_target and self.is_in_fov(self.current_target):
             detected_target = self.current_target
@@ -100,7 +101,10 @@ class Herbivore(Circle):
         elif isinstance(detected_target, Plant):
             self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
             reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
+        """
         
+        detected_target = None
+
         # Draw FOV fan shape
         self.draw_fov(detected_target is not None)
 

@@ -7,4 +7,5 @@ from BaseObjects import Rectangle, Circle
 
 from .predator import Predator
 from .herbivore import Herbivore
+from .survival_env import SurvivalEnv 
 from .plant import Plant
