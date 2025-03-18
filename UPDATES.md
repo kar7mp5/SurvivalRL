@@ -6,6 +6,7 @@
 4.  [**Debug Mode**](#debug-mode)
 5.  [**POV Detector**](#pov-detector)
 6.  [**Spatial Hash Grid (Collision)**](#spatial-hash-grid-collision)
+7.  [**Apply Reinforcement Learning**](#apply-reinforcement-learning)
 
 ## Circle and Rectangle Collision System
 
@@ -62,9 +63,29 @@
 
 ## Spatial Hash Grid (Collision)
 
-**Data: 2025.03.13.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/db75f806d56dd9e86ce1deced4907db306a688ee)
+**Date: 2025.03.13.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/db75f806d56dd9e86ce1deced4907db306a688ee)
 
 -   At first, I tried using a QuadTree for object collision detection. It worked well for collisions, but I stopped using it due to issues with FOV detection. So, I switched to a Spatial Hash Grid instead.
 -   I set the predator object's size to change based on its energy level.
 
 ![spatial_hash_grid](./docs/spatial_hash_grid.gif)
+
+## Apply Reinforcement Learning
+
+**Date: 2025.03.18.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/74c93b772fb0bd8417c9d17fb9bec167510b42a8)
+
+-   Add Reinforcement Learning train and infercence.
+
+### Train
+
+<video width="640" height="360" controls>
+  <source src="./docs/train.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+### Inference
+
+<video width="640" height="360" controls>
+  <source src="./docs/infer.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
