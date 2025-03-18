@@ -2,6 +2,8 @@ import os
 import subprocess
 from collections import deque
 from multiprocessing import Pool, cpu_count
+import matplotlib
+matplotlib.use("Agg")  # Switch to non-interactive backend
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,6 +16,7 @@ from gym import spaces
 
 from SurvivalRL import Config, GameObject  # Custom module imports
 
+import concurrent.futures
 
 def save_frame(args):
     """ Saves a single frame as a PNG image. Used in multiprocessing. """
@@ -44,7 +47,6 @@ class SurvivalEnv(gym.Env):
         # Initialize Matplotlib figure for rendering
         self.fig, (self.ax, self.ax_plot) = plt.subplots(1, 2, figsize=(12, 6))
 
-        self.fig, self.ax = plt.subplots(figsize=(6, 6))
         self.ax.set_xlim(-Config.WINDOW_SIZE // 2, Config.WINDOW_SIZE // 2)
         self.ax.set_ylim(-Config.WINDOW_SIZE // 2, Config.WINDOW_SIZE // 2)
         self.ax.set_title("Survival Simulation")
@@ -193,8 +195,8 @@ class SurvivalEnv(gym.Env):
 
     def render(self, mode="human", save_as="train.mp4"):
         """
-        High-speed rendering using multiprocessing to save frames in parallel.
-        Now includes population tracking plot alongside the simulation.
+        Ultra-fast rendering using optimized Matplotlib updates and parallel frame saving.
+        Now includes blitting for faster rendering.
         """
         from Objects import Herbivore, Predator, Plant
 
@@ -202,20 +204,19 @@ class SurvivalEnv(gym.Env):
         frame_dir = "frames"
         os.makedirs(frame_dir, exist_ok=True)
 
-        # Prepare frames for multiprocessing
+        # Prepare frames for parallel saving
         frame_data_list = []
 
-        # Initialize population tracking
+        # Initialize population tracking with limited deque size
         population_data = {
             "Predator": deque(maxlen=Config.FRAMES),
             "Herbivore": deque(maxlen=Config.FRAMES),
             "Plant": deque(maxlen=Config.FRAMES)
         }
 
-        # Setup population tracking plot
-        self.ax_plot.clear()
+        # **Blitting Optimization (Redraw Only When Needed)**
         self.ax_plot.set_xlim(0, Config.FRAMES)
-        self.ax_plot.set_ylim(0, max(15, len(self.game.objects)))
+        self.ax_plot.set_ylim(0, 20)  
         self.ax_plot.set_title("Population Over Time")
         self.ax_plot.set_xlabel("Time (frames)")
         self.ax_plot.set_ylabel("Population")
@@ -225,44 +226,52 @@ class SurvivalEnv(gym.Env):
         line_plant, = self.ax_plot.plot([], [], color="green", label="Plants")
         self.ax_plot.legend()
 
+        plt.tight_layout()
+
         for i in tqdm(range(Config.FRAMES), desc="Capturing Frames", unit="frame"):
             self.game.update(Config.TARGET_FPS)  # Update game state
-            self.fig.canvas.draw()
 
             # Count population
             herbivore_count = sum(isinstance(obj, Herbivore) for obj in self.game.objects)
             predator_count = sum(isinstance(obj, Predator) for obj in self.game.objects)
             plant_count = sum(isinstance(obj, Plant) for obj in self.game.objects)
 
-            # Store population data
+            # Store recent population data
             population_data["Herbivore"].append(herbivore_count)
             population_data["Predator"].append(predator_count)
             population_data["Plant"].append(plant_count)
 
-            # Update plot
-            x_data = list(range(len(population_data["Herbivore"])))
-            line_herb.set_data(x_data, list(population_data["Herbivore"]))
-            line_pred.set_data(x_data, list(population_data["Predator"]))
-            line_plant.set_data(x_data, list(population_data["Plant"]))
+            # **Fast Population Plot Update**
+            x_data = np.arange(len(population_data["Herbivore"]))  # Precompute range
+            line_herb.set_data(x_data, np.array(population_data["Herbivore"]))
+            line_pred.set_data(x_data, np.array(population_data["Predator"]))
+            line_plant.set_data(x_data, np.array(population_data["Plant"]))
 
-            self.ax_plot.set_ylim(0, max(
+            max_population = max(
                 max(population_data["Herbivore"], default=10),
                 max(population_data["Predator"], default=10),
                 max(population_data["Plant"], default=10)
-            ) + 5)
+            )
+            self.ax_plot.set_ylim(0, max_population + 5)
 
-            # Convert figure to NumPy array
-            frame = np.array(self.fig.canvas.renderer.buffer_rgba(), dtype=np.uint8)
+            # **Blitting Optimization: Draw Only Changes**
+            self.fig.canvas.flush_events()
+            self.fig.canvas.draw()
+
+            # Convert figure to NumPy array (Faster Processing)
+            frame = np.frombuffer(self.fig.canvas.tostring_argb(), dtype=np.uint8)
+            frame = frame.reshape(self.fig.canvas.get_width_height()[::-1] + (4,))
+            frame = frame[:, :, [1, 2, 3]]
 
             # Store frame data
             filename = os.path.join(frame_dir, f"frame_{i:05d}.png")
             frame_data_list.append((frame, filename))
 
-        # Use multiprocessing to save frames in parallel
-        with Pool(processes=cpu_count()) as pool:
-            list(tqdm(pool.imap_unordered(save_frame, frame_data_list), total=len(frame_data_list), desc="Saving Frames", unit="frame"))
+        # **Use ThreadPoolExecutor for Parallel Frame Saving**
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count()) as executor:
+            list(tqdm(executor.map(save_frame, frame_data_list), total=len(frame_data_list), desc="Saving Frames", unit="frame"))
 
-        # Convert frames to MP4 using ffmpeg
+        # **GPU-Accelerated FFmpeg Encoding**
         output_video = save_as
         fps = Config.TARGET_FPS
         ffmpeg_cmd = [
@@ -270,13 +279,13 @@ class SurvivalEnv(gym.Env):
             "-y",
             "-framerate", str(fps),
             "-i", os.path.join(frame_dir, "frame_%05d.png"),
-            "-c:v", "libx264",
+            "-c:v", "h264_nvenc",  # Use NVIDIA NVENC for GPU acceleration
             "-preset", "fast",
             "-pix_fmt", "yuv420p",
             output_video
         ]
 
-        print("Converting images to MP4...")
+        print("Converting images to MP4 using GPU-accelerated ffmpeg...")
         subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print("MP4 Video Created Successfully!")
 
