@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib
-matplotlib.use("TkAgg")  # WSL matplotlib animation renderer
+matplotlib.use("Agg")  # Non-interactive backend for fast rendering
 
 import numpy as np
 from collections import deque
@@ -9,9 +9,10 @@ from tqdm import tqdm
 from SurvivalRL import Config, GameObject, Predator, Herbivore, Plant
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     np.random.seed(41)
-    # Set up the figure layout (one simulation + one population plot)
+
+    # Set up the figure layout (Simulation + Population Plot)
     fig, (ax_sim, ax_plot) = plt.subplots(1, 2, figsize=(12, 6))
 
     # Configure simulation subplot
@@ -22,10 +23,9 @@ if __name__=='__main__':
     game = GameObject(ax_sim)
 
     # Add objects to the simulation
-    for i in range(Config.HERBI_NUM):
+    for _ in range(Config.HERBI_NUM):
         game.add_object(Herbivore(
-            game=game,
-            ax=ax_sim,
+            game=game, ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             energy=100,
@@ -34,10 +34,9 @@ if __name__=='__main__':
             colour="blue",
         ))
 
-    for i in range(Config.PRED_NUM):
+    for _ in range(Config.PRED_NUM):
         game.add_object(Predator(
-            game=game,
-            ax=ax_sim,
+            game=game, ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             energy=500,
@@ -47,10 +46,9 @@ if __name__=='__main__':
             colour="red",
         ))
 
-    for i in range(Config.PLANT_NUM):
+    for _ in range(Config.PLANT_NUM):
         game.add_object(Plant(
-            game=game,
-            ax=ax_sim,
+            game=game, ax=ax_sim,
             x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             energy=100,
@@ -68,31 +66,29 @@ if __name__=='__main__':
     )
 
     # Configure population tracking plot
-    ax_plot.set_xlim(0, Config.FRAMES)  # Time range
-    ax_plot.set_ylim(0, max(15, len(game.objects)))  # Dynamic y-limit
+    ax_plot.set_xlim(0, Config.FRAMES)
+    ax_plot.set_ylim(0, 20)  # Set an initial y-limit
     ax_plot.set_title("Population Over Time")
     ax_plot.set_xlabel("Time (frames)")
     ax_plot.set_ylabel("Population")
 
-    # Initialize deque for tracking population history
+    # Initialize deque for tracking population history (Limited to Recent Data)
     population_data = {
-        "Predator": deque(maxlen=Config.FRAMES),
-        "Herbivore": deque(maxlen=Config.FRAMES),
-        "Plant": deque(maxlen=Config.FRAMES)
+        "Predator": deque(maxlen=500),
+        "Herbivore": deque(maxlen=500),
+        "Plant": deque(maxlen=500)
     }
 
     # Create empty lines for real-time updating
     line_herb, = ax_plot.plot([], [], color="blue", label="Herbivores")
     line_pred, = ax_plot.plot([], [], color="red", label="Predators")
     line_plant, = ax_plot.plot([], [], color="green", label="Plants")
-
     ax_plot.legend()
 
-
     def animate(frame):
-        """Updates the simulation, object count label, and population plot."""
+        """Optimized animation update function with blitting."""
         game.update(Config.TARGET_FPS)  # Update game state
-        
+
         # Count different object types
         herbivore_count = sum(isinstance(obj, Herbivore) for obj in game.objects)
         predator_count = sum(isinstance(obj, Predator) for obj in game.objects)
@@ -105,40 +101,41 @@ if __name__=='__main__':
             f"Plants: {plant_count}"
         )
 
-        # Append new population data
+        # Store new population data (Limited to last 500 frames)
         population_data["Herbivore"].append(herbivore_count)
         population_data["Predator"].append(predator_count)
         population_data["Plant"].append(plant_count)
 
-        # Update line plots
-        x_data = list(range(len(population_data["Herbivore"])))
-        line_herb.set_data(x_data, list(population_data["Herbivore"]))
-        line_pred.set_data(x_data, list(population_data["Predator"]))
-        line_plant.set_data(x_data, list(population_data["Plant"]))
+        # Convert population data to NumPy for speed
+        x_data = np.arange(len(population_data["Herbivore"]))
+        line_herb.set_data(x_data, np.array(population_data["Herbivore"]))
+        line_pred.set_data(x_data, np.array(population_data["Predator"]))
+        line_plant.set_data(x_data, np.array(population_data["Plant"]))
 
-        # Adjust y-limits dynamically based on max population
+        # Adjust y-limits dynamically
         max_population = max(
-            max(population_data["Herbivore"]),
-            max(population_data["Predator"]),
-            max(population_data["Plant"]),
-            10
+            max(population_data["Herbivore"], default=10),
+            max(population_data["Predator"], default=10),
+            max(population_data["Plant"], default=10)
         )
         ax_plot.set_ylim(0, max_population + 5)
 
-        return label, line_herb, line_pred, line_plant
+        return line_herb, line_pred, line_plant, label
 
-
+    # Faster Animation with Blitting
     ani = animation.FuncAnimation(
-        fig=fig, 
-        func=animate, 
-        frames=tqdm(range(Config.FRAMES)), 
-        interval=Config.INTERVAL, 
-        blit=False)
+        fig=fig,
+        func=animate,
+        frames=tqdm(range(Config.FRAMES), desc="Rendering Frames"),
+        interval=Config.INTERVAL,
+        blit=True,  # Enables blitting (only updates changes)
+        cache_frame_data=False  # Prevents memory buildup
+    )
 
-    # Save the animation
-    # ani.save("result.gif", writer="pillow", fps=Config.TARGET_FPS)
-    # Save the animation as an MP4 file
+    # Save the animation with optimized FFmpeg
+    print("Saving animation as MP4...")
     ani.save("result.mp4", writer="ffmpeg", fps=Config.TARGET_FPS)
+    print("Animation saved successfully!")
 
     # Show the plots
     # plt.show()
