@@ -57,8 +57,7 @@ class Plant(Circle):
             self.division()
 
         # Check collision
-        # cell_x, cell_y = self.get_grid_cell()
-        possible_collisions = grid.retrieve_nearby(self) # .get((cell_x, cell_y), [])
+        possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
             if other is not self and self.is_colliding(other):
                 self.resolve_collision(other)
@@ -71,13 +70,14 @@ class Plant(Circle):
         # direction_length = np.hypot(dx, dy)
 
         # if direction_length > 0.01:
-        #     dx /= direction_length
-        #     dy /= direction_length
-        #     arrow_length = max(1, direction_length * 5)
+            # dx /= direction_length
+            # dy /= direction_length
+            # arrow_length = max(1, direction_length * 5)
 
-        #     # Updates the direction arrow to indicate movement direction
-        #     self.direction_arrow.set_data([self.pos.x, self.pos.x + dx * arrow_length], 
-        #                                   [self.pos.y, self.pos.y + dy * arrow_length])
+            # Updates the direction arrow to indicate movement direction
+            # self.direction_arrow.set_xy(self.pos.x, self.pos.y)
+            # set_data([self.pos.x, self.pos.x + dx * arrow_length], 
+                                        #   [self.pos.y, self.pos.y + dy * arrow_length])
 
         # Ensure objects stay within boundaries
         self.constrain_within_map()
@@ -130,7 +130,6 @@ class Plant(Circle):
         """
         if self in self.game.objects:
             self.game.objects.remove(self)  # Remove from the game list
-
             if self.shape is not None:
                 self.shape.remove()
             if hasattr(self, "direction_arrow"):

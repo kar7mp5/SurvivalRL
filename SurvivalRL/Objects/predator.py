@@ -25,7 +25,7 @@ class Predator(Rectangle):
 
     FOV_ANGLE = 30
     FOV_RADIUS = 6
-    DIVISION_UNIT = 300
+    DIVISION_UNIT = 500
     ENERGY_UNIT = 500
     GRID_UPDATE_THRESHOLD = 1
  

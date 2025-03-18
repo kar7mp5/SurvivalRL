@@ -25,9 +25,9 @@ class Herbivore(Circle):
     
     FOV_ANGLE = 270
     FOV_RADIUS = 4
+    DIVISION_UNIT = 300
     ENERGY_UNIT = 500
     GRID_UPDATE_THRESHOLD = 1
-    DIVISION_UNIT = 250
 
     def __init__(
         self, 
