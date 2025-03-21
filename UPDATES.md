@@ -78,14 +78,8 @@
 
 ### Train
 
-<video width="640" height="360" controls>
-  <source src="./docs/train.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+![spatial_hash_grid](./docs/train.gif)
 
 ### Inference
 
-<video width="640" height="360" controls>
-  <source src="./docs/infer.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+![spatial_hash_grid](./docs/infer.gif)
