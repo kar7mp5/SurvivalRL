@@ -51,7 +51,7 @@ class Plant(Circle):
             self.label.set_fontsize(6)
 
 
-        self.energy += 0.4
+        self.energy += 0.3
         if self.energy >= 100:
             self.energy -= 80
             self.division()

@@ -30,7 +30,7 @@ if __name__ == '__main__':
             y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
             energy=100,
             radius=np.random.uniform(1, 2),
-            target_speed=np.random.uniform(0.1, 0.5),
+            target_speed=np.random.uniform(0.3, 0.5),
             colour="blue",
         ))
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
             energy=500,
             width=np.random.uniform(2, 4),
             height=np.random.uniform(2, 4),
-            target_speed=np.random.uniform(0.1, 0.5),
+            target_speed=np.random.uniform(0.3, 0.5),
             colour="red",
         ))
 

@@ -26,8 +26,8 @@ class Predator(Rectangle):
     FOV_ANGLE = 30
     FOV_RADIUS = 6
     DIVISION_UNIT = 500
-    ENERGY_UNIT = 500
-    GRID_UPDATE_THRESHOLD = 1
+    ENERGY_UNIT = 1000
+    GRID_UPDATE_THRESHOLD = 0.2
  
     def __init__(
         self, 
@@ -87,82 +87,80 @@ class Predator(Rectangle):
                 break
 
     def update(self, fps, grid):
-        """Updates the rectangle's position and handles collisions."""
+        """
+        Updates the predator's position, energy, FOV detection, reproduction, and collisions.
+
+        Args:
+            fps (int): The frames per second used for time-based movement.
+            grid (dict): Spatial hash grid for efficient neighbor detection.
+        """
         super().update()
 
-        # Energy logic
+        # Decrease energy over time; remove if energy is depleted
         self.energy -= 0.1
         if self.energy <= 0:
             self.remove()
+            return
 
-        # Adjust size based on energy level
+        # Adjust size based on current energy level
         self.width = max(2, self.init_width * self.energy / self.ENERGY_UNIT)
         self.height = max(2, self.init_height * self.energy / self.ENERGY_UNIT)
-
-        # Update grid position only if the size change is significant
         if (abs(self.width - self.last_grid_width) >= self.GRID_UPDATE_THRESHOLD or
             abs(self.height - self.last_grid_height) >= self.GRID_UPDATE_THRESHOLD):
             self.last_grid_width = self.width
             self.last_grid_height = self.height
 
-        from Objects import Herbivore
+        # from Objects import Herbivore
+        # # Detect herbivores within FOV and set target to chase
+        # herbivore = self.detect_in_fov_type(grid, target_type=Herbivore)
+        # if herbivore:
+        #     dx = self.pos.x - herbivore.pos.x
+        #     dy = self.pos.y - herbivore.pos.y
+        #     norm = max(np.hypot(dx, dy), 1e-5)
+        #     self.target_x = self.pos.x + (dx / norm) * 5
+        #     self.target_y = self.pos.y + (dy / norm) * 5
+
+        # Move toward target
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
-        """
-        # Check object in FOV
-        if self.current_target and self.is_in_fov(self.current_target):
-            detected_target = self.current_target
-        else:
-            detected_target = self.detect_in_fov(grid)
-            self.current_target = detected_target
-    
-        # Detect objects in FOV
-        if isinstance(detected_target, Predator):
-            self.set_new_target()  
-        elif isinstance(detected_target, Herbivore):
-            self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
-            reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
-        """
-        detected_target = None
+        # Update FOV visualization based on current direction
+        herbivore = None
+        self.draw_fov(herbivore is not None)
 
-        # Draw FOV fan shape
-        self.draw_fov(detected_target is not None)
-
+        # If reached target location, choose a new random destination
         if reached_target:
             self.set_new_target()
 
-        # Check collision
+        # Check for collisions with nearby objects
         possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
-            if other is not self and self.aabb_collision(other):
+            if other is self:
+                continue
+            if self.aabb_collision(other):
                 self.resolve_collision(other)
                 self.shape.set_color("gray")
             else:
                 self.shape.set_color(self.colour)
 
+        # Update movement direction arrow
         dx = self.pos.x - prev_x
         dy = self.pos.y - prev_y
         direction_length = np.hypot(dx, dy)
-
         if direction_length > 0.01:
             dx /= direction_length
             dy /= direction_length
             arrow_length = max(1, direction_length * 5)
-
-            # Updates the direction arrow to indicate movement direction
             self.direction_arrow.set_data(
-                [self.pos.x + self.width / 2, self.pos.x + self.width / 2 + dx * arrow_length], 
+                [self.pos.x + self.width / 2, self.pos.x + self.width / 2 + dx * arrow_length],
                 [self.pos.y + self.height / 2, self.pos.y + self.height / 2 + dy * arrow_length]
             )
-
-            # Apply rectangle rotation
             self.rotation_angle = np.degrees(np.arctan2(dy, dx))
             self.apply_rotation()
 
-        # Update debug label with movement tracking information
-        if self.isDebug is True:
+        # Update debug label (if enabled)
+        if self.isDebug:
             self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
                                 f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
                                 f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
@@ -170,6 +168,9 @@ class Predator(Rectangle):
 
         self.shape.set_xy(self.pos())
         self.label.set_position((self.pos.x + self.width / 2, self.pos.y + self.height + 0.5))
+
+        # Attempt reproduction with nearby predator
+        # self.try_reproduce_in_fov(grid)
 
     def set_new_target(self):
         """ 
@@ -297,6 +298,46 @@ class Predator(Rectangle):
                 min_distance_sq = distance_sq
 
         return best_target
+
+    def detect_in_fov_type(self, grid, target_type):
+        """
+        Detects the nearest object of the given type within the predator's FOV.
+        """
+        candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
+        best_target = None
+        min_distance_sq = self.FOV_RADIUS ** 2
+
+        for obj in candidates:
+            if obj is self or not isinstance(obj, target_type):
+                continue
+            dx = obj.pos.x - self.pos.x
+            dy = obj.pos.y - self.pos.y
+            dist_sq = dx * dx + dy * dy
+            angle = np.degrees(np.arctan2(dy, dx))
+            dir_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+            diff = (angle - dir_angle + 180) % 360 - 180
+
+            if dist_sq < min_distance_sq and abs(diff) <= self.FOV_ANGLE / 2:
+                best_target = obj
+                min_distance_sq = dist_sq
+
+        return best_target
+
+    def try_reproduce_in_fov(self, grid):
+        """
+        Attempts reproduction with another Predator in FOV if both have sufficient energy.
+        """
+        from Objects import Predator
+        mate = self.detect_in_fov_type(grid, Predator)
+        if mate and mate is not self:
+            dx = mate.pos.x - self.pos.x
+            dy = mate.pos.y - self.pos.y
+            distance_sq = dx * dx + dy * dy
+            if distance_sq < 4.0:  # Close enough to reproduce
+                if self.energy >= self.DIVISION_UNIT and mate.energy >= self.DIVISION_UNIT:
+                    self.energy -= self.DIVISION_UNIT // 2
+                    mate.energy -= self.DIVISION_UNIT // 2
+                    self.division()
 
     def draw_fov(self, target_detected):
         """

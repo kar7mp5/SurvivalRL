@@ -1,57 +1,48 @@
 import os
 import subprocess
 from collections import deque
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count
 import matplotlib
-matplotlib.use("Agg")  # Switch to non-interactive backend
+matplotlib.use("Agg")
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from PIL import Image
 from tqdm import tqdm
 
 import gym
 from gym import spaces
 
-from SurvivalRL import Config, GameObject  # Custom module imports
-
+from SurvivalRL import Config, GameObject
 import concurrent.futures
 
+
 def save_frame(args):
-    """ Saves a single frame as a PNG image. Used in multiprocessing. """
     frame_data, filename = args
     image = Image.fromarray(frame_data)
     image.save(filename)
 
 
 class SurvivalEnv(gym.Env):
-    """
-    Reinforcement Learning Environment for Predator-Prey Simulation.
-    """
     metadata = {"render.modes": ["human"]}
 
     def __init__(self):
         super(SurvivalEnv, self).__init__()
         from Objects import Predator, Herbivore, Plant
-        # State: [x, y, energy, speed]
+
         self.observation_space = spaces.Box(
-            low=np.array([-Config.WINDOW_SIZE / 2, -Config.WINDOW_SIZE / 2, 0, 0]),
-            high=np.array([Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2, 500, 1]),
+            low=np.array([-Config.WINDOW_SIZE / 2] * 2 + [0, 0] + [-Config.WINDOW_SIZE / 2] * 2 + [0, 0]),
+            high=np.array([Config.WINDOW_SIZE / 2] * 2 + [500, 1] + [Config.WINDOW_SIZE / 2] * 2 + [500, 1]),
             dtype=np.float32
         )
 
-        # Action: [dx, dy] movement
-        self.action_space = spaces.Box(low=np.array([-1, -1, 0]), high=np.array([1, 1, 1]), dtype=np.float32)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(6,), dtype=np.float32)
 
-        # Initialize Matplotlib figure for rendering
         self.fig, (self.ax, self.ax_plot) = plt.subplots(1, 2, figsize=(12, 6))
-
         self.ax.set_xlim(-Config.WINDOW_SIZE // 2, Config.WINDOW_SIZE // 2)
         self.ax.set_ylim(-Config.WINDOW_SIZE // 2, Config.WINDOW_SIZE // 2)
         self.ax.set_title("Survival Simulation")
 
-        # Game Object Manager
         self.game = GameObject(self.ax)
         self.grid = self.game.spatial_grid
 
@@ -60,6 +51,7 @@ class SurvivalEnv(gym.Env):
     def reset(self):
         from Objects import Predator, Herbivore, Plant
         self.game.spatial_grid.clear()
+        # self.game.objects.clear()
 
         for _ in range(Config.PRED_NUM):
             self.predator = Predator(
@@ -76,7 +68,7 @@ class SurvivalEnv(gym.Env):
             self.game.add_object(self.predator)
 
         for _ in range(Config.HERBI_NUM):
-            self.game.add_object(Herbivore(
+            self.herbivore = Herbivore(
                 game=self.game,
                 ax=self.ax,
                 x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
@@ -85,7 +77,8 @@ class SurvivalEnv(gym.Env):
                 radius=1.5,
                 target_speed=0.4,
                 colour="blue"
-            ))
+            )
+            self.game.add_object(self.herbivore)
 
         for _ in range(Config.PLANT_NUM):
             self.game.add_object(Plant(
@@ -98,125 +91,95 @@ class SurvivalEnv(gym.Env):
                 colour="green"
             ))
 
-        return self._get_observation()
+        return self._get_obs()
 
-    def _get_observation(self):
-        """ Returns the current state as an observation. """
-        return np.array([self.predator.pos.x, self.predator.pos.y, self.predator.energy, self.predator.target_speed])
+    def _get_obs(self):
+        return np.array([
+            self.predator.pos.x, self.predator.pos.y, self.predator.energy, self.predator.target_speed,
+            self.herbivore.pos.x, self.herbivore.pos.y, self.herbivore.energy, self.herbivore.target_speed
+        ], dtype=np.float32)
 
     def step(self, action):
-        """
-        Executes a single step in the environment based on the given action.
-        
-        Args:
-            action (tuple): A tuple containing movement values (dx, dy) and optionally a detection flag.
-        
-        Returns:
-            tuple: (observation, reward, done, info)
-                - observation: The updated state of the environment.
-                - reward: The reward for this step.
-                - done: A boolean indicating if the episode has ended.
-                - info: Additional debug information (empty dictionary).
-        """
-        from Objects import Plant, Predator  # Import object classes
+        from Objects import Plant
 
-        # Extract movement values and detection flag
-        if len(action) == 2:
-            dx, dy = action
-            detect_target = 0  # Default: No detection
-        else:
-            dx, dy, detect_target = action
+        pdx, pdy, pdetect = action[0:3]
+        hdx, hdy, hdetect = action[3:6]
 
-        detected_target = None
-        # If detection is activated, find the nearest object within the FOV
-        if detect_target > 0.5:
-            detected_target = self.detect_in_fov(self.predator.pos.x, self.predator.pos.y, self.predator.FOV_RADIUS)
+        predator_reward = 1
+        herbivore_reward = 1
+        predator_done = False
+        herbivore_done = False
 
-        # If an object is detected, determine whether to chase or evade
-        if detected_target:
-            if isinstance(detected_target, Plant):
-                # If a plant is detected, move towards it
-                self.target_x, self.target_y = detected_target.pos.x, detected_target.pos.y
-            elif isinstance(detected_target, Predator):
-                # If another predator is detected, move in the opposite direction (escape)
-                self.target_x, self.target_y = -detected_target.pos.x, -detected_target.pos.y  
+        predator_target = None
+        if pdetect > 0.5:
+            predator_target = self.predator.detect_in_fov_type(self.grid, Plant)
+            if predator_target:
+                self.predator.target_x = predator_target.pos.x
+                self.predator.target_y = predator_target.pos.y
 
-        # Apply movement updates
-        self.predator.pos.x += dx * 5  # Move predator in the x-direction
-        self.predator.pos.y += dy * 5  # Move predator in the y-direction
-        self.predator.energy -= 0.1  # Reduce energy with each movement
+        self.predator.update(Config.TARGET_FPS, self.grid)
+        self.predator.pos.x += pdx * 5
+        self.predator.pos.y += pdy * 5
+        self.predator.energy -= 0.1
 
-        # Check termination condition (if energy is depleted)
-        done = self.predator.energy <= 0
+        if self.predator.energy <= 0:
+            predator_done = True
+            predator_reward = -10
 
-        # Assign reward: penalty if dead (-10), otherwise +1 for each step
-        reward = -10 if done else 1
+        if predator_target and self._approached(self.predator, predator_target):
+            predator_reward += 2
 
-        return self._get_observation(), reward, done, {}  # Return updated state, reward, and episode status
+        if self.predator.try_reproduce_in_fov(self.grid):
+            predator_reward += 5
 
-    def detect_in_fov(self, x, y, fov_radius):
-        """
-        Detects the nearest object within the Field of View (FOV) using a Spatial Hash Grid.
-        
-        Args:
-            x (float): X-coordinate of the observer.
-            y (float): Y-coordinate of the observer.
-            fov_radius (float): The radius defining the FOV range.
+        herbivore_target = None
+        if hdetect > 0.5:
+            herbivore_target = self.herbivore.detect_in_fov_for_type(self.grid, Plant)
+            if herbivore_target:
+                self.herbivore.target_x = herbivore_target.pos.x
+                self.herbivore.target_y = herbivore_target.pos.y
 
-        Returns:
-            Object or None: The nearest detected object within the FOV, or None if no object is found.
-        """
-        # Retrieve all possible objects within the FOV range using a spatial hash grid
-        possible_objects = self.grid.retrieve_in_fov_range(x, y, fov_radius)
-        
-        best_target = None  # Variable to store the nearest object
-        min_distance_sq = fov_radius ** 2  # Maximum search distance (squared for efficiency)
+        self.herbivore.update(Config.TARGET_FPS, self.grid)
+        self.herbivore.pos.x += hdx * 5
+        self.herbivore.pos.y += hdy * 5
+        self.herbivore.energy -= 0.1
 
-        for obj in possible_objects:
-            # Skip self-detection (e.g., predator should not detect itself)
-            if obj is self.predator:
-                continue  
+        if self.herbivore.energy <= 0:
+            herbivore_done = True
+            herbivore_reward = -10
 
-            # Compute squared Euclidean distance between the object and observer
-            dx = obj.pos.x - x
-            dy = obj.pos.y - y
-            distance_sq = dx * dx + dy * dy
+        if herbivore_target and self._approached(self.herbivore, herbivore_target):
+            herbivore_reward += 2
 
-            # Ignore objects outside the FOV radius
-            if distance_sq > min_distance_sq:
-                continue  
+        if self.herbivore.try_reproduce_in_fov(self.grid):
+            herbivore_reward += 5
 
-            # Update the closest object if this one is nearer
-            if distance_sq < min_distance_sq:
-                best_target = obj
-                min_distance_sq = distance_sq  # Update the minimum distance
+        obs = self._get_obs()
+        reward = predator_reward + herbivore_reward
+        done = predator_done and herbivore_done
 
-        return best_target  # Return the nearest object within FOV
+        return obs, reward, done, {}
+
+    def _approached(self, agent, target, threshold=5.0):
+        dx = agent.pos.x - target.pos.x
+        dy = agent.pos.y - target.pos.y
+        return (dx * dx + dy * dy) < threshold ** 2
 
     def render(self, mode="human", save_as="train.mp4"):
-        """
-        Ultra-fast rendering using optimized Matplotlib updates and parallel frame saving.
-        Now includes blitting for faster rendering.
-        """
         from Objects import Herbivore, Predator, Plant
 
-        # Create a directory to store frames
         frame_dir = "frames"
         os.makedirs(frame_dir, exist_ok=True)
-
-        # Prepare frames for parallel saving
         frame_data_list = []
 
-        # Initialize population tracking with limited deque size
         population_data = {
             "Predator": deque(maxlen=Config.FRAMES),
             "Herbivore": deque(maxlen=Config.FRAMES),
             "Plant": deque(maxlen=Config.FRAMES)
         }
 
-        # **Blitting Optimization (Redraw Only When Needed)**
         self.ax_plot.set_xlim(0, Config.FRAMES)
-        self.ax_plot.set_ylim(0, 20)  
+        self.ax_plot.set_ylim(0, 20)
         self.ax_plot.set_title("Population Over Time")
         self.ax_plot.set_xlabel("Time (frames)")
         self.ax_plot.set_ylabel("Population")
@@ -229,20 +192,17 @@ class SurvivalEnv(gym.Env):
         plt.tight_layout()
 
         for i in tqdm(range(Config.FRAMES), desc="Capturing Frames", unit="frame"):
-            self.game.update(Config.TARGET_FPS)  # Update game state
+            self.game.update(Config.TARGET_FPS)
 
-            # Count population
             herbivore_count = sum(isinstance(obj, Herbivore) for obj in self.game.objects)
             predator_count = sum(isinstance(obj, Predator) for obj in self.game.objects)
             plant_count = sum(isinstance(obj, Plant) for obj in self.game.objects)
 
-            # Store recent population data
             population_data["Herbivore"].append(herbivore_count)
             population_data["Predator"].append(predator_count)
             population_data["Plant"].append(plant_count)
 
-            # **Fast Population Plot Update**
-            x_data = np.arange(len(population_data["Herbivore"]))  # Precompute range
+            x_data = np.arange(len(population_data["Herbivore"]))
             line_herb.set_data(x_data, np.array(population_data["Herbivore"]))
             line_pred.set_data(x_data, np.array(population_data["Predator"]))
             line_plant.set_data(x_data, np.array(population_data["Plant"]))
@@ -254,24 +214,19 @@ class SurvivalEnv(gym.Env):
             )
             self.ax_plot.set_ylim(0, max_population + 5)
 
-            # **Blitting Optimization: Draw Only Changes**
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()
 
-            # Convert figure to NumPy array (Faster Processing)
             frame = np.frombuffer(self.fig.canvas.tostring_argb(), dtype=np.uint8)
             frame = frame.reshape(self.fig.canvas.get_width_height()[::-1] + (4,))
             frame = frame[:, :, [1, 2, 3]]
 
-            # Store frame data
             filename = os.path.join(frame_dir, f"frame_{i:05d}.png")
             frame_data_list.append((frame, filename))
 
-        # **Use ThreadPoolExecutor for Parallel Frame Saving**
         with concurrent.futures.ThreadPoolExecutor(max_workers=cpu_count()) as executor:
             list(tqdm(executor.map(save_frame, frame_data_list), total=len(frame_data_list), desc="Saving Frames", unit="frame"))
 
-        # **GPU-Accelerated FFmpeg Encoding**
         output_video = save_as
         fps = Config.TARGET_FPS
         ffmpeg_cmd = [
@@ -279,17 +234,16 @@ class SurvivalEnv(gym.Env):
             "-y",
             "-framerate", str(fps),
             "-i", os.path.join(frame_dir, "frame_%05d.png"),
-            "-c:v", "h264_nvenc",  # Use NVIDIA NVENC for GPU acceleration
+            "-c:v", "libx264",
             "-preset", "fast",
             "-pix_fmt", "yuv420p",
             output_video
         ]
 
-        print("Converting images to MP4 using GPU-accelerated ffmpeg...")
+        print("Converting images to MP4 using CPU-based ffmpeg...")
         subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print("MP4 Video Created Successfully!")
 
-        # Cleanup frames
         for file in os.listdir(frame_dir):
             os.remove(os.path.join(frame_dir, file))
         os.rmdir(frame_dir)

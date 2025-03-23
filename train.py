@@ -23,5 +23,5 @@ if __name__ == '__main__':
 
     progress_bar.close()
 
-    # env.render(save_as="train.mp4")
+    env.render(save_as="train.mp4")
     env.close()
