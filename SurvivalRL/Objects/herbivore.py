@@ -59,10 +59,7 @@ class Herbivore(Circle):
     def update(self, fps, grid):
         """
         Updates the herbivore's position, energy, FOV detection, reproduction, and collisions.
-
-        Args:
-            fps (int): The frames per second used for time-based movement.
-            grid (dict): Spatial hash grid for efficient neighbor detection.
+        Includes directional FOV visualization for approach or avoidance behavior.
         """
         super().update()
 
@@ -77,25 +74,33 @@ class Herbivore(Circle):
         if abs(self.radius - self.last_grid_radius) >= self.GRID_UPDATE_THRESHOLD:
             self.last_grid_radius = self.radius
 
-        # from Objects import Predator
-        # # Detect predators within FOV and set new target to escape
-        # predator = self.detect_in_fov_for_type(grid, target_type=Predator)
-        # if predator:
-        #     print("=============")
-        #     dx = self.pos.x - predator.pos.x
-        #     dy = self.pos.y - predator.pos.y
-        #     norm = max(np.hypot(dx, dy), 1e-5)
-        #     self.target_x = self.pos.x + (dx / norm) * 5
-        #     self.target_y = self.pos.y + (dy / norm) * 5
+        # --- 탐지 상태 기록용 변수 ---
+        detection_type = None
 
-        # Move toward target
+        from Objects import Plant, Predator
+
+        # --- 탐지 기반 반응 시각화 (추적 또는 회피) ---
+        predator = self.detect_in_fov_for_type(grid, Predator)
+        if predator:
+            dx = self.pos.x - predator.pos.x
+            dy = self.pos.y - predator.pos.y
+            norm = max(np.hypot(dx, dy), 1e-5)
+            self.target_x = self.pos.x + (dx / norm) * 5
+            self.target_y = self.pos.y + (dy / norm) * 5
+            detection_type = "avoid"
+
+        elif (plant := self.detect_in_fov_for_type(grid, Plant)):
+            self.target_x = plant.pos.x
+            self.target_y = plant.pos.y
+            detection_type = "approach"
+
+        # --- 이동 처리 ---
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
-        # Update FOV visualization based on current direction
-        predator = None
-        self.draw_fov(predator is not None)
+        # --- FOV 시각화 업데이트 ---
+        self.draw_fov(detection_type)
 
         # If reached target location, choose a new random destination
         if reached_target:
@@ -123,7 +128,7 @@ class Herbivore(Circle):
                 [self.pos.y, self.pos.y + dy * arrow_length]
             )
 
-        # Update debug label (if enabled)
+        # Debug label update
         if self.isDebug:
             self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
                                 f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
@@ -132,9 +137,6 @@ class Herbivore(Circle):
 
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
-
-        # Attempt reproduction if mate is nearby and energy is sufficient
-        # self.try_reproduce_in_fov(grid)
 
     def set_new_target(self):
         """ 
@@ -228,36 +230,6 @@ class Herbivore(Circle):
 
         return abs(angle_diff) <= self.FOV_ANGLE / 2
 
-    def detect_in_fov(self, grid):
-        """
-        Detects the nearest object within the Field of View (FOV) using Spatial Hash Grid.
-        """
-        possible_objects = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
-        best_target = None
-        min_distance_sq = self.FOV_RADIUS ** 2  # Calculate distance
-
-        for obj in possible_objects:
-            if obj is self:
-                continue
-
-            dx = obj.pos.x - self.pos.x
-            dy = obj.pos.y - self.pos.y
-            distance_sq = dx * dx + dy * dy  # Rather than np.hypot
-
-            if distance_sq > min_distance_sq:
-                continue  # Out of FOV range
-
-            # Calculate FOV degree
-            angle = np.degrees(np.arctan2(dy, dx))
-            direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
-            angle_diff = (angle - direction_angle + 180) % 360 - 180  
-
-            if abs(angle_diff) <= self.FOV_ANGLE / 2 and distance_sq < min_distance_sq:
-                best_target = obj
-                min_distance_sq = distance_sq
-
-        return best_target
-
     def detect_in_fov_for_type(self, grid, target_type):
         """
         Returns the first object of the given type detected within FOV.
@@ -300,12 +272,12 @@ class Herbivore(Circle):
                 mate.energy -= self.DIVISION_UNIT // 2
                 self.division()
 
-    def draw_fov(self, target_detected):
+    def draw_fov(self, detection_type=None):
         """
-        Visualizes the Field of View (FOV) as a sector (wedge) using matplotlib.patches.Wedge.
-
-        Args:
-            target_detected (bool): Whether an object has been detected within the FOV.
+        Visualizes the FOV. Detection type can be:
+        - None: default (no detection)
+        - "approach": tracking a resource (e.g., plant)
+        - "avoid": evading a threat (e.g., predator)
         """
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
 
@@ -313,6 +285,88 @@ class Herbivore(Circle):
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
 
-        # Change color when a target is detected
-        self.fov_patch.set_color("red" if target_detected else "cyan")
-        self.fov_patch.set_alpha(0.3)  # Set transparency for visibility
+        # Detection-dependent visual
+        if detection_type == "avoid":
+            self.fov_patch.set_color("red")
+        elif detection_type == "approach":
+            self.fov_patch.set_color("green")
+        else:
+            self.fov_patch.set_color("cyan")
+
+        self.fov_patch.set_alpha(0.3)
+
+    """
+    Reward
+    """
+    def compute_reward(self, action, grid, game_objects):
+        from Objects import Plant, Predator
+
+        dx, dy, detect_flag = action
+        reward = 0.0
+        breakdown = {}
+        done = False
+
+        # --- 식물 탐지 ---
+        target = None
+        if detect_flag > 0.5:
+            target = self.detect_in_fov_for_type(grid, Plant)
+            if target:
+                self.target_x = target.pos.x
+                self.target_y = target.pos.y
+                reward += 3.0
+                breakdown["plant_detected"] = 3.0
+
+        # --- 이동 및 소모 ---
+        self.update(Config.TARGET_FPS, grid)
+        self.pos.x += dx * 5
+        self.pos.y += dy * 5
+        self.energy -= 0.1
+
+        if self.energy <= 0:
+            return -10, {"death": -10}, True
+
+        # --- 포식자 회피 강화 ---
+        predator = next((obj for obj in game_objects if isinstance(obj, Predator)), None)
+        if predator:
+            dx_p = self.pos.x - predator.pos.x
+            dy_p = self.pos.y - predator.pos.y
+            dist = np.sqrt(dx_p**2 + dy_p**2)
+
+            # 감지만 되어도 압박
+            if self.is_in_fov(predator):
+                reward -= 5.0
+                breakdown["predator_seen"] = -5.0
+
+            # 가까울수록 패널티 커짐
+            if dist < 3.0:
+                reward -= 30.0  # 🔥 생존 실패 수준 패널티
+                breakdown["predator_too_close"] = -30.0
+            elif dist < 6.0:
+                penalty = -10 * (1 - (dist / 6))
+                reward += penalty
+                breakdown["predator_nearby_penalty"] = penalty
+            elif dist > 10.0:
+                bonus = min(dist * 1.0, 10.0)
+                reward += bonus
+                breakdown["predator_far_bonus"] = bonus
+
+        # --- 식물 근접 보상 ---
+        if target and self._distance_sq_to(target) < 16.0:
+            reward += 5.0
+            breakdown["plant_approached"] = 5.0
+
+        # --- 번식 보상 ---
+        if self.try_reproduce_in_fov(grid):
+            reward += 5.0
+            breakdown["reproduce"] = 5.0
+
+        # --- 생존 보상 (약하게 유지) ---
+        reward += 0.2
+        breakdown["alive"] = 0.2
+
+        return reward, breakdown, done
+
+    def _distance_sq_to(self, obj):
+        dx = self.pos.x - obj.pos.x
+        dy = self.pos.y - obj.pos.y
+        return dx * dx + dy * dy

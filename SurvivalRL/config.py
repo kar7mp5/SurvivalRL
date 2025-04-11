@@ -8,9 +8,9 @@ class Config:
     MIN_TARGET_DISTANCE: int = 5
 
     # Number of creatures
-    HERBI_NUM: int = 4
-    PRED_NUM: int = 1
-    PLANT_NUM: int = 10
+    HERBI_NUM: int = 10
+    PRED_NUM: int = 4
+    PLANT_NUM: int = 15
 
     # Text setting
     DEFAULT_FONT_SIZE: int = 7
@@ -24,6 +24,6 @@ class Config:
 
     # Animation Setting
     TARGET_FPS: int = 30
-    DURATION: int = 30
+    DURATION: int = 10
     INTERVAL: float = 1000 / TARGET_FPS
     FRAMES: float = TARGET_FPS * DURATION

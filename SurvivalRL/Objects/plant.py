@@ -51,9 +51,9 @@ class Plant(Circle):
             self.label.set_fontsize(6)
 
 
-        self.energy += 0.3
-        if self.energy >= 100:
-            self.energy -= 80
+        self.energy += 0.5
+        if self.energy >= 150:
+            self.energy = 50
             self.division()
 
         # Check collision
@@ -100,7 +100,7 @@ class Plant(Circle):
             ax=self.ax,
             x=self.pos.x + random_x,
             y=self.pos.x + random_y,
-            energy=self.energy // 4,
+            energy=50,
             radius=self.radius,
             colour=np.random.choice(self.SHADES),
         ))

@@ -153,3 +153,51 @@ class GameObject:
             )
             self.ax.add_patch(rect)
             self.grid_patches.append(rect)
+
+    def reset_objects(self):
+        """
+        Fully resets all game objects and removes their visual shapes.
+        """
+        for obj in self.objects:
+            if hasattr(obj, 'shape') and obj.shape:
+                try:
+                    obj.shape.remove()
+                except Exception:
+                    pass
+            if hasattr(obj, 'label') and obj.label:
+                try:
+                    obj.label.remove()
+                except Exception:
+                    pass
+            if hasattr(obj, 'direction_arrow') and obj.direction_arrow:
+                try:
+                    obj.direction_arrow.remove()
+                except Exception:
+                    pass
+            if hasattr(obj, 'hitbox') and obj.hitbox:
+                try:
+                    obj.hitbox.remove()
+                except Exception:
+                    pass
+
+        self.objects.clear()
+        self.spatial_grid.clear()
+
+        for patch in self.grid_patches:
+            try:
+                patch.remove()
+            except Exception:
+                pass
+        self.grid_patches.clear()
+
+        for patch in list(self.ax.patches):
+            try:
+                patch.remove()
+            except Exception:
+                pass
+
+        for line in list(self.ax.lines):
+            try:
+                line.remove()
+            except Exception:
+                pass

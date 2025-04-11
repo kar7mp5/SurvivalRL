@@ -46,12 +46,15 @@ class SurvivalEnv(gym.Env):
         self.game = GameObject(self.ax)
         self.grid = self.game.spatial_grid
 
-        self.reset()
-
     def reset(self):
         from Objects import Predator, Herbivore, Plant
-        self.game.spatial_grid.clear()
-        # self.game.objects.clear()
+        self.game.reset_objects()
+        self.grid = self.game.spatial_grid
+
+        print('---RESET ENVIRONMENT---')
+        print(f'PRED: {Config.PRED_NUM}')
+        print(f'HERBI: {Config.HERBI_NUM}')
+        print(f'PLANT: {Config.PLANT_NUM}')
 
         for _ in range(Config.PRED_NUM):
             self.predator = Predator(
@@ -59,7 +62,7 @@ class SurvivalEnv(gym.Env):
                 ax=self.ax,
                 x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
                 y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-                energy=500,
+                energy=150,
                 width=3,
                 height=3,
                 target_speed=0.3,
@@ -86,7 +89,7 @@ class SurvivalEnv(gym.Env):
                 ax=self.ax,
                 x=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
                 y=np.random.uniform(-Config.WINDOW_SIZE / 2, Config.WINDOW_SIZE / 2),
-                energy=100,
+                energy=10,
                 radius=1.5,
                 colour="green"
             ))
@@ -94,76 +97,46 @@ class SurvivalEnv(gym.Env):
         return self._get_obs()
 
     def _get_obs(self):
-        return np.array([
-            self.predator.pos.x, self.predator.pos.y, self.predator.energy, self.predator.target_speed,
-            self.herbivore.pos.x, self.herbivore.pos.y, self.herbivore.energy, self.herbivore.target_speed
-        ], dtype=np.float32)
+        return {
+            "predator": np.array([
+                self.predator.pos.x,
+                self.predator.pos.y,
+                self.predator.energy,
+                self.predator.target_speed,
+            ], dtype=np.float32),
+            "herbivore": np.array([
+                self.herbivore.pos.x,
+                self.herbivore.pos.y,
+                self.herbivore.energy,
+                self.herbivore.target_speed,
+            ], dtype=np.float32),
+        }
 
     def step(self, action):
-        from Objects import Plant
+        # 객체 내부에서 보상 계산
+        predator_reward, predator_contrib, predator_done = self.predator.compute_reward(
+            action["predator"], self.grid, self.game.objects
+        )
+        # print("PRED:", predator_reward, predator_contrib)
 
-        pdx, pdy, pdetect = action[0:3]
-        hdx, hdy, hdetect = action[3:6]
-
-        predator_reward = 1
-        herbivore_reward = 1
-        predator_done = False
-        herbivore_done = False
-
-        predator_target = None
-        if pdetect > 0.5:
-            predator_target = self.predator.detect_in_fov_type(self.grid, Plant)
-            if predator_target:
-                self.predator.target_x = predator_target.pos.x
-                self.predator.target_y = predator_target.pos.y
-
-        self.predator.update(Config.TARGET_FPS, self.grid)
-        self.predator.pos.x += pdx * 5
-        self.predator.pos.y += pdy * 5
-        self.predator.energy -= 0.1
-
-        if self.predator.energy <= 0:
-            predator_done = True
-            predator_reward = -10
-
-        if predator_target and self._approached(self.predator, predator_target):
-            predator_reward += 2
-
-        if self.predator.try_reproduce_in_fov(self.grid):
-            predator_reward += 5
-
-        herbivore_target = None
-        if hdetect > 0.5:
-            herbivore_target = self.herbivore.detect_in_fov_for_type(self.grid, Plant)
-            if herbivore_target:
-                self.herbivore.target_x = herbivore_target.pos.x
-                self.herbivore.target_y = herbivore_target.pos.y
-
-        self.herbivore.update(Config.TARGET_FPS, self.grid)
-        self.herbivore.pos.x += hdx * 5
-        self.herbivore.pos.y += hdy * 5
-        self.herbivore.energy -= 0.1
-
-        if self.herbivore.energy <= 0:
-            herbivore_done = True
-            herbivore_reward = -10
-
-        if herbivore_target and self._approached(self.herbivore, herbivore_target):
-            herbivore_reward += 2
-
-        if self.herbivore.try_reproduce_in_fov(self.grid):
-            herbivore_reward += 5
+        herbivore_reward, herbivore_contrib, herbivore_done = self.herbivore.compute_reward(
+            action["herbivore"], self.grid, self.game.objects
+        )
+        # print("HERBI:", herbivore_reward, herbivore_contrib)
 
         obs = self._get_obs()
-        reward = predator_reward + herbivore_reward
-        done = predator_done and herbivore_done
+        reward = {"predator": predator_reward, "herbivore": herbivore_reward}
+        done = {
+            "predator": predator_done,
+            "herbivore": herbivore_done,
+            "__all__": predator_done and herbivore_done
+        }
+        info = {
+            "predator_breakdown": predator_contrib,
+            "herbivore_breakdown": herbivore_contrib
+        }
 
-        return obs, reward, done, {}
-
-    def _approached(self, agent, target, threshold=5.0):
-        dx = agent.pos.x - target.pos.x
-        dy = agent.pos.y - target.pos.y
-        return (dx * dx + dy * dy) < threshold ** 2
+        return obs, reward, done, info
 
     def render(self, mode="human", save_as="train.mp4"):
         from Objects import Herbivore, Predator, Plant

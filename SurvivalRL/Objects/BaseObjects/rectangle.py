@@ -322,3 +322,14 @@ class Rectangle(BaseObject):
 
         self.set_new_target()
         other.set_new_target()
+
+    def remove(self):
+        """Remove all associated matplotlib artists (shape, label, arrow)."""
+        if hasattr(self, "shape"):
+            self.shape.remove()
+        if hasattr(self, "label"):
+            self.label.remove()
+        if hasattr(self, "direction_arrow"):
+            self.direction_arrow.remove()
+        if hasattr(self, "hitbox"):
+            self.hitbox.remove()
