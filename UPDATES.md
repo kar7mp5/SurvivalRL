@@ -83,3 +83,47 @@
 ### Inference
 
 ![spatial_hash_grid](./docs/infer.gif)
+
+## Fix Reinforcement Learning and Enhance model
+
+**Date: 2025.04.11.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/637aaac1c92f931b7e406c621b659c70c8b17f4c)
+
+### 1. Reward logic refactored into agents
+
+-   `compute_reward()` moved to `Predator` and `Herbivore` classes
+-   Each agent now computes its own reward
+-   `SurvivalEnv` only collects the results
+
+### 2. FOV-based visualization added
+
+-   `draw_fov(detection_type)` added
+-   FOV color changes based on intent:
+    -   `"approach"` → green
+    -   `"avoid"` → red
+    -   `None` → cyan
+
+### 3. Herbivore reward shaping improved
+
+-   Strong penalty for close predator proximity (`-30`)
+-   Bonus for maintaining distance (`+10`)
+-   Plant detection (`+3`) and approach (`+5`)
+-   Reproduction reward (`+5`)
+
+### 4. Predator target behavior improved
+
+-   Prioritizes herbivores, then plants
+-   Reward for plant detection (`+0.2`) and approach (`+2`)
+-   Penalty for missing nearby plant (`-5`)
+-   Reproduction reward (`+5`)
+
+### Herbivore Train
+
+![herbivore_train](./docs/herbivore_train.gif)
+
+### Predator Train
+
+![predator_train](./docs/predator_train.gif)
+
+### Inference
+
+![infer_dual](./docs/infer_dual.gif)
