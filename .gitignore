@@ -1,6 +1,9 @@
 # Train results
 result.mp4
-ppo_survival.zip
+*.zip
+herbivore_train.mp4
+infer_dual.mp4
+predator_train.mp4
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
