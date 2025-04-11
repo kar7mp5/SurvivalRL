@@ -7,6 +7,7 @@
 5.  [**POV Detector**](#pov-detector)
 6.  [**Spatial Hash Grid (Collision)**](#spatial-hash-grid-collision)
 7.  [**Apply Reinforcement Learning**](#apply-reinforcement-learning)
+8.  [**Fix Reinforcement Learning and Enhance model**](#fix-reinforcement-learning-and-enhance-model)
 
 ## Circle and Rectangle Collision System
 
