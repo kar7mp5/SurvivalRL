@@ -88,16 +88,22 @@ class Predator(Rectangle):
 
     def update(self, fps, grid):
         """
-        Updates the predator's position, energy, FOV detection, reproduction, and collisions.
-        Includes directional FOV visualization based on detection.
+        Updates the predator's state per frame, including movement, energy decay,
+        FOV-based prey detection, reproduction eligibility, collisions, and visual debug overlays.
+
+        Args:
+            fps (int): The current frame rate used for speed normalization.
+            grid (SpatialHashGrid): Grid structure for querying nearby objects and FOV detection.
         """
         super().update()
 
+        # Decrease energy over time. If energy is depleted, remove the predator.
         self.energy -= 0.1
         if self.energy <= 0:
             self.remove()
             return
 
+        # Update size based on energy level.
         self.width = max(2, self.init_width * self.energy / self.ENERGY_UNIT)
         self.height = max(2, self.init_height * self.energy / self.ENERGY_UNIT)
         if (abs(self.width - self.last_grid_width) >= self.GRID_UPDATE_THRESHOLD or
@@ -105,11 +111,9 @@ class Predator(Rectangle):
             self.last_grid_width = self.width
             self.last_grid_height = self.height
 
-        # --- 추적 대상 확인 ---
+        # Detect FOV target: prioritize Herbivore, then fallback to Plant.
         detection_type = None
-
         from Objects import Herbivore, Plant
-
         prey = self.detect_in_fov_type(grid, Herbivore)
         if not prey:
             prey = self.detect_in_fov_type(grid, Plant)
@@ -119,18 +123,19 @@ class Predator(Rectangle):
             self.target_y = prey.pos.y
             detection_type = "approach"
 
-        # --- 이동 처리 ---
+        # Move toward the current target.
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
-        # --- FOV 시각화 업데이트 ---
+        # Update FOV wedge direction and color based on detection.
         self.draw_fov(detection_type)
 
+        # If the predator reaches its target, generate a new random one.
         if reached_target:
             self.set_new_target()
 
-        # 충돌 처리
+        # Resolve collisions with nearby objects.
         possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
             if other is self:
@@ -141,7 +146,7 @@ class Predator(Rectangle):
             else:
                 self.shape.set_color(self.colour)
 
-        # 이동 방향 표시
+        # Update direction arrow and apply rotation angle.
         dx = self.pos.x - prev_x
         dy = self.pos.y - prev_y
         direction_length = np.hypot(dx, dy)
@@ -156,12 +161,18 @@ class Predator(Rectangle):
             self.rotation_angle = np.degrees(np.arctan2(dy, dx))
             self.apply_rotation()
 
+        # Update debug label with current status if debugging is enabled.
         if self.isDebug:
-            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
-                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
-                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_text(
+                f'{self.name}\n'
+                f'Pos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                f'Speed: {max_speed:.2f}\n'
+                f'Energy: {self.energy:.2f}'
+            )
             self.label.set_fontsize(Config.DEBUG_FONT_SIZE)
 
+        # Update visual placement of the shape and label in the figure.
         self.shape.set_xy(self.pos())
         self.label.set_position((self.pos.x + self.width / 2, self.pos.y + self.height + 0.5))
 
@@ -317,9 +328,9 @@ class Predator(Rectangle):
         self.fov_patch.set_radius(adjusted_fov_radius)
 
         if detection_type == "approach":
-            self.fov_patch.set_color("orange")  # 사냥 중 (활성 상태)
+            self.fov_patch.set_color("orange")  # hunt status (active)
         else:
-            self.fov_patch.set_color("cyan")    # 탐색 상태
+            self.fov_patch.set_color("cyan")    # search status
 
         self.fov_patch.set_alpha(0.3)
 
@@ -327,6 +338,25 @@ class Predator(Rectangle):
     Reward
     """
     def compute_reward(self, action, grid, game_objects):
+        """
+        Computes the predator's reward for one simulation step based on plant detection,
+        movement, target approach, and reproduction.
+
+        Reward components include:
+        - Base survival bonus
+        - Bonus for detecting and approaching plants
+        - Penalty for missing nearby plants when detection fails
+        - Reproduction reward
+
+        Args:
+            action (np.ndarray): The action taken by the predator (dx, dy, detect flag).
+            grid (SpatialHashGrid): Spatial grid for FOV and collision queries.
+            game_objects (List[GameObject]): All objects currently in the simulation.
+
+        Returns:
+            Tuple[float, dict, bool]: Total reward, a breakdown of reward components,
+                                    and a done flag indicating death.
+        """
         from Objects import Plant
 
         dx, dy, detect_flag = action
@@ -334,40 +364,43 @@ class Predator(Rectangle):
         breakdown = {"base": 1.0}
         done = False
 
-        # 탐지 시 타겟 설정
+        # If detection is enabled, attempt to acquire a visible plant as target.
         target = None
         if detect_flag > 0.5:
             target = self.detect_in_fov_type(grid, Plant)
             if target:
+                # Lock onto the detected plant.
                 self.target_x = target.pos.x
                 self.target_y = target.pos.y
                 reward += 0.2
                 breakdown["plants_seen"] = 0.2
             else:
+                # If detection fails, check if there was a nearby plant that was missed.
                 for obj in game_objects:
                     if isinstance(obj, Plant):
-                        dist_sq = (self.pos.x - obj.pos.x)**2 + (self.pos.y - obj.pos.y)**2
+                        dist_sq = (self.pos.x - obj.pos.x) ** 2 + (self.pos.y - obj.pos.y) ** 2
                         if dist_sq < 25:
                             reward -= 5
                             breakdown["missed_plant"] = -5
                             break
 
-        # 이동, 에너지 감소
+        # Apply action-based movement and decrease energy.
         self.update(Config.TARGET_FPS, grid)
         self.pos.x += dx * 5
         self.pos.y += dy * 5
         self.energy -= 0.1
 
+        # If energy reaches zero, mark as done and apply penalty.
         if self.energy <= 0:
             done = True
             return -10, {"death": -10}, True
 
-        # 타겟 접근 성공
+        # Grant reward if the predator successfully approached the detected plant.
         if target and self._distance_sq_to(target) < 25:
             reward += 2
             breakdown["approach_target"] = 2
 
-        # 번식 성공
+        # Reward reproduction events.
         if self.try_reproduce_in_fov(grid):
             reward += 5
             breakdown["reproduce"] = 5
@@ -375,6 +408,15 @@ class Predator(Rectangle):
         return reward, breakdown, done
 
     def _distance_sq_to(self, obj):
+        """
+        Computes the squared Euclidean distance to another object.
+
+        Args:
+            obj (GameObject): The object to compute distance to.
+
+        Returns:
+            float: The squared distance between this agent and the target object.
+        """
         dx = self.pos.x - obj.pos.x
         dy = self.pos.y - obj.pos.y
         return dx * dx + dy * dy

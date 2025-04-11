@@ -11,18 +11,34 @@ from collections import defaultdict
 
 
 class PredatorEnvWrapper(gym.Env):
+    """Custom Gym wrapper for training the Predator agent in the dual-agent environment."""
+    
     def __init__(self):
+        """Initializes the predator-specific environment."""
         self.env = SurvivalEnv()
         self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
         self.reward_breakdown = defaultdict(float)
 
     def reset(self):
+        """Resets the environment and clears the reward breakdown.
+
+        Returns:
+            np.ndarray: Initial observation for the predator agent.
+        """
         obs = self.env.reset()
         self.reward_breakdown.clear()
         return obs["predator"]
 
     def step(self, action):
+        """Takes one step in the environment using the predator's action.
+
+        Args:
+            action (np.ndarray): Action for the predator agent.
+
+        Returns:
+            Tuple: Observation, reward, done flag, and empty info dictionary.
+        """
         actions = {"predator": action, "herbivore": np.array([0, 0, 0], dtype=np.float32)}
         obs, reward, done, info = self.env.step(actions)
         if "predator_breakdown" in info:
@@ -32,25 +48,43 @@ class PredatorEnvWrapper(gym.Env):
         return obs["predator"], reward["predator"], done["predator"], {}
 
     def render(self):
+        """Renders the predator's training process to a video file."""
         self.env.render(save_as="predator_train.mp4")
 
     def close(self):
+        """Cleans up and closes the environment."""
         self.env.close()
 
 
 class HerbivoreEnvWrapper(gym.Env):
+    """Custom Gym wrapper for training the Herbivore agent in the dual-agent environment."""
+
     def __init__(self):
+        """Initializes the herbivore-specific environment."""
         self.env = SurvivalEnv()
         self.observation_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(4,), dtype=np.float32)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(3,), dtype=np.float32)
         self.reward_breakdown = defaultdict(float)
 
     def reset(self):
+        """Resets the environment and clears the reward breakdown.
+
+        Returns:
+            np.ndarray: Initial observation for the herbivore agent.
+        """
         obs = self.env.reset()
         self.reward_breakdown.clear()
         return obs["herbivore"]
 
     def step(self, action):
+        """Takes one step in the environment using the herbivore's action.
+
+        Args:
+            action (np.ndarray): Action for the herbivore agent.
+
+        Returns:
+            Tuple: Observation, reward, done flag, and empty info dictionary.
+        """
         actions = {"predator": np.array([0, 0, 0], dtype=np.float32), "herbivore": action}
         obs, reward, done, info = self.env.step(actions)
 
@@ -61,13 +95,21 @@ class HerbivoreEnvWrapper(gym.Env):
         return obs["herbivore"], reward["herbivore"], done["herbivore"], {}
 
     def render(self):
+        """Renders the herbivore's training process to a video file."""
         self.env.render(save_as="herbivore_train.mp4")
 
     def close(self):
+        """Cleans up and closes the environment."""
         self.env.close()
 
 
 def train_agent(name, env_class):
+    """Trains a single agent using PPO in its own environment wrapper.
+
+    Args:
+        name (str): The agent name (used for logging and model saving).
+        env_class (Type[gym.Env]): The environment wrapper class to train with.
+    """
     np.random.seed(41)
     env = env_class()
     model = PPO("MlpPolicy", env, verbose=0)

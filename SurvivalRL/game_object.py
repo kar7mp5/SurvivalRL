@@ -36,7 +36,7 @@ class SpatialHashGrid:
     def retrieve_in_fov_range(self, x, y, fov_radius):
         """Retrieve all objects within a given FOV radius using an adaptive cell range."""
         cell_x, cell_y = self._get_cell_key(x, y)
-        search_radius = int(np.ceil(fov_radius / self.cell_size))  # 검색할 셀 개수
+        search_radius = int(np.ceil(fov_radius / self.cell_size))  # number of cell
 
         possible_objects = []
         for dx in range(-search_radius, search_radius + 1):

@@ -11,7 +11,7 @@ import numpy as np
 pred_model = PPO.load("predator_ppo_model")
 herb_model = PPO.load("herbivore_ppo_model")
 
-# 공통 환경 초기화
+# Initialize shared environment
 env = SurvivalEnv()
 obs = env.reset()
 done = False
@@ -22,11 +22,11 @@ for _ in range(Config.FRAMES):
     if done:
         break
 
-    # observation dict에서 각 에이전트별 추출
+    # Extract observations for each agent from the observation dict
     pred_obs = obs["predator"]
     herb_obs = obs["herbivore"]
 
-    # 행동 예측 + detect 항상 활성화
+    # Predict actions with detect flag always enabled
     pred_action, _ = pred_model.predict(pred_obs)
     herb_action, _ = herb_model.predict(herb_obs)
 
@@ -38,6 +38,7 @@ for _ in range(Config.FRAMES):
         "herbivore": herb_action
     }
 
+    # Step through the environment
     obs, reward, done, _ = env.step(actions)
 
     progress.update(1)

@@ -58,30 +58,36 @@ class Herbivore(Circle):
 
     def update(self, fps, grid):
         """
-        Updates the herbivore's position, energy, FOV detection, reproduction, and collisions.
-        Includes directional FOV visualization for approach or avoidance behavior.
+        Updates the herbivore's state each frame, including energy depletion,
+        movement toward or away from targets, FOV-based detection and visualization,
+        reproduction checks, and collision handling.
+
+        Args:
+            fps (int): Frames per second, used to normalize movement speed.
+            grid (SpatialHashGrid): Spatial grid used for neighbor detection and FOV checks.
         """
         super().update()
 
-        # Decrease energy over time; remove if energy is depleted
+        # Reduce energy slightly each frame to simulate metabolism.
         self.energy -= 0.1
         if self.energy <= 0:
             self.remove()
             return
 
-        # Adjust size based on current energy level
+        # Adjust the agent's radius according to current energy.
         self.radius = max(1, self.init_radius * self.energy / self.ENERGY_UNIT)
         if abs(self.radius - self.last_grid_radius) >= self.GRID_UPDATE_THRESHOLD:
             self.last_grid_radius = self.radius
 
-        # --- 탐지 상태 기록용 변수 ---
+        # Initialize detection type for FOV visualization.
         detection_type = None
 
         from Objects import Plant, Predator
 
-        # --- 탐지 기반 반응 시각화 (추적 또는 회피) ---
+        # Check FOV for predator first; escape if seen.
         predator = self.detect_in_fov_for_type(grid, Predator)
         if predator:
+            # Move in the opposite direction of the predator.
             dx = self.pos.x - predator.pos.x
             dy = self.pos.y - predator.pos.y
             norm = max(np.hypot(dx, dy), 1e-5)
@@ -89,33 +95,34 @@ class Herbivore(Circle):
             self.target_y = self.pos.y + (dy / norm) * 5
             detection_type = "avoid"
 
+        # If no predator detected, check for plants to approach.
         elif (plant := self.detect_in_fov_for_type(grid, Plant)):
             self.target_x = plant.pos.x
             self.target_y = plant.pos.y
             detection_type = "approach"
 
-        # --- 이동 처리 ---
+        # Move toward the current target.
         prev_x, prev_y = self.pos.x, self.pos.y
         max_speed = self.target_speed * (60 / fps)
         reached_target = self.pos.move_towards(self.target_x, self.target_y, max_speed)
 
-        # --- FOV 시각화 업데이트 ---
+        # Update the FOV wedge visualization based on behavior (approach/avoid).
         self.draw_fov(detection_type)
 
-        # If reached target location, choose a new random destination
+        # If the target was reached, set a new random destination.
         if reached_target:
             self.set_new_target()
 
-        # Check for collisions with nearby objects
+        # Check and resolve any collisions with nearby objects.
         possible_collisions = grid.retrieve_nearby(self)
         for other in possible_collisions:
             if other is not self and self.is_colliding(other):
                 self.resolve_collision(other)
-                self.shape.set_color("red")
+                self.shape.set_color("red")  # Visual indicator of collision.
             else:
                 self.shape.set_color(self.colour)
 
-        # Update movement direction arrow
+        # Update direction arrow to indicate movement direction.
         dx = self.pos.x - prev_x
         dy = self.pos.y - prev_y
         direction_length = np.hypot(dx, dy)
@@ -128,13 +135,18 @@ class Herbivore(Circle):
                 [self.pos.y, self.pos.y + dy * arrow_length]
             )
 
-        # Debug label update
+        # Update debug label text and position if debugging is enabled.
         if self.isDebug:
-            self.label.set_text(f'{self.name}\nPos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
-                                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
-                                f'Speed: {max_speed:.2f}\nEnergy: {self.energy:.2f}')
+            self.label.set_text(
+                f'{self.name}\n'
+                f'Pos: ({self.pos.x:.2f}, {self.pos.y:.2f})\n'
+                f'Target: ({self.target_x:.2f}, {self.target_y:.2f})\n'
+                f'Speed: {max_speed:.2f}\n'
+                f'Energy: {self.energy:.2f}'
+            )
             self.label.set_fontsize(Config.DEBUG_FONT_SIZE)
 
+        # Set visual shape and label position for rendering.
         self.shape.set_center(self.pos())
         self.label.set_position((self.pos.x, self.pos.y + self.radius + 0.5))
 
@@ -207,11 +219,17 @@ class Herbivore(Circle):
             del self  # Delete the object
     
     """
-    FOV
+    FOV(Field Of View)
     """
     def is_in_fov(self, obj):
         """
-        Checks if the given object is still inside the Predator's FOV.
+        Checks whether a given object is within this herbivore's field of view.
+
+        Args:
+            obj (GameObject): The object to check visibility for.
+
+        Returns:
+            bool: True if within FOV, False otherwise.
         """
         if obj is None:
             return False
@@ -232,7 +250,14 @@ class Herbivore(Circle):
 
     def detect_in_fov_for_type(self, grid, target_type):
         """
-        Returns the first object of the given type detected within FOV.
+        Detects the nearest object of a specified type within the FOV.
+
+        Args:
+            grid (SpatialHashGrid): Grid to search for nearby objects.
+            target_type (Type): Class type to match (e.g., Plant or Predator).
+
+        Returns:
+            GameObject or None: The closest object of the given type, or None if none found.
         """
         candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
 
@@ -263,7 +288,11 @@ class Herbivore(Circle):
 
     def try_reproduce_in_fov(self, grid):
         """
-        Checks if there is another Herbivore within FOV and both have enough energy to divide.
+        Checks for a nearby herbivore in FOV to initiate reproduction
+        if both agents have sufficient energy.
+        
+        Args:
+            grid (SpatialHashGrid): Grid to check for nearby mates.
         """
         mate = self.detect_in_fov_for_type(grid, Herbivore)
         if mate and mate is not self:
@@ -274,10 +303,13 @@ class Herbivore(Circle):
 
     def draw_fov(self, detection_type=None):
         """
-        Visualizes the FOV. Detection type can be:
-        - None: default (no detection)
-        - "approach": tracking a resource (e.g., plant)
-        - "avoid": evading a threat (e.g., predator)
+        Updates the appearance of the FOV based on current detection status.
+
+        Args:
+            detection_type (str or None): Type of detection to visualize.
+                - "approach": Moving toward a plant.
+                - "avoid": Evading a predator.
+                - None: Default visual (not detecting anything).
         """
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
 
@@ -299,6 +331,26 @@ class Herbivore(Circle):
     Reward
     """
     def compute_reward(self, action, grid, game_objects):
+        """
+        Computes the total reward for the herbivore agent during a single simulation step.
+
+        The reward is calculated based on several factors:
+        - Detecting and approaching plants
+        - Avoiding predators (with distance-based penalties/bonuses)
+        - Reproducing when conditions are met
+        - Remaining alive each step
+
+        Args:
+            action (np.ndarray): The action vector [dx, dy, detect_flag].
+            grid (SpatialHashGrid): The spatial grid used for FOV and collision queries.
+            game_objects (List[GameObject]): All active game objects in the environment.
+
+        Returns:
+            Tuple[float, dict, bool]: A tuple containing:
+                - reward (float): Total scalar reward for the step.
+                - breakdown (dict): Dictionary explaining each reward component.
+                - done (bool): Whether the herbivore has died (energy depleted).
+        """
         from Objects import Plant, Predator
 
         dx, dy, detect_flag = action
@@ -306,7 +358,7 @@ class Herbivore(Circle):
         breakdown = {}
         done = False
 
-        # --- 식물 탐지 ---
+        # Detect a plant and update the target position accordingly.
         target = None
         if detect_flag > 0.5:
             target = self.detect_in_fov_for_type(grid, Plant)
@@ -316,30 +368,31 @@ class Herbivore(Circle):
                 reward += 3.0
                 breakdown["plant_detected"] = 3.0
 
-        # --- 이동 및 소모 ---
+        # Apply movement and decrease energy slightly for this step.
         self.update(Config.TARGET_FPS, grid)
         self.pos.x += dx * 5
         self.pos.y += dy * 5
         self.energy -= 0.1
 
+        # If energy has fully depleted, end the episode for this agent.
         if self.energy <= 0:
             return -10, {"death": -10}, True
 
-        # --- 포식자 회피 강화 ---
+        # Check proximity to a predator and adjust reward accordingly.
         predator = next((obj for obj in game_objects if isinstance(obj, Predator)), None)
         if predator:
             dx_p = self.pos.x - predator.pos.x
             dy_p = self.pos.y - predator.pos.y
             dist = np.sqrt(dx_p**2 + dy_p**2)
 
-            # 감지만 되어도 압박
+            # Apply penalty if predator is within field of view.
             if self.is_in_fov(predator):
                 reward -= 5.0
                 breakdown["predator_seen"] = -5.0
 
-            # 가까울수록 패널티 커짐
+            # Apply distance-based avoidance penalty or bonus.
             if dist < 3.0:
-                reward -= 30.0  # 🔥 생존 실패 수준 패널티
+                reward -= 30.0
                 breakdown["predator_too_close"] = -30.0
             elif dist < 6.0:
                 penalty = -10 * (1 - (dist / 6))
@@ -350,23 +403,32 @@ class Herbivore(Circle):
                 reward += bonus
                 breakdown["predator_far_bonus"] = bonus
 
-        # --- 식물 근접 보상 ---
-        if target and self._distance_sq_to(target) < 16.0:
+        # Add bonus if the herbivore has approached the plant closely.
+        if target and self._distance_sq_to(target) < 16.0:  # within 4 units
             reward += 5.0
             breakdown["plant_approached"] = 5.0
 
-        # --- 번식 보상 ---
+        # Add reproduction bonus if reproduction conditions are met.
         if self.try_reproduce_in_fov(grid):
             reward += 5.0
             breakdown["reproduce"] = 5.0
 
-        # --- 생존 보상 (약하게 유지) ---
+        # Small bonus for surviving this step.
         reward += 0.2
         breakdown["alive"] = 0.2
 
         return reward, breakdown, done
 
     def _distance_sq_to(self, obj):
+        """
+        Calculates the squared Euclidean distance from this herbivore to another object.
+
+        Args:
+            obj (GameObject): The target object whose distance is to be measured.
+
+        Returns:
+            float: The squared distance between this agent and the given object.
+        """
         dx = self.pos.x - obj.pos.x
         dy = self.pos.y - obj.pos.y
         return dx * dx + dy * dy
