@@ -53,7 +53,7 @@ class Plant(Circle):
 
         self.energy += 0.5
         if self.energy >= 150:
-            self.energy = 50
+            self.energy -= 75
             self.division()
 
         # Check collision
@@ -100,7 +100,7 @@ class Plant(Circle):
             ax=self.ax,
             x=self.pos.x + random_x,
             y=self.pos.x + random_y,
-            energy=50,
+            energy=self.energy//2,
             radius=self.radius,
             colour=np.random.choice(self.SHADES),
         ))

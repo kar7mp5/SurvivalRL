@@ -3,14 +3,14 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Config:
     # Simulation Environment Setting
-    WINDOW_SIZE: int = 50
+    WINDOW_SIZE: int = 100
     GRID_SIZE: int = WINDOW_SIZE // 10
     MIN_TARGET_DISTANCE: int = 5
 
     # Number of creatures
-    HERBI_NUM: int = 10
+    HERBI_NUM: int = 15
     PRED_NUM: int = 4
-    PLANT_NUM: int = 15
+    PLANT_NUM: int = 50
 
     # Text setting
     DEFAULT_FONT_SIZE: int = 7
@@ -24,6 +24,6 @@ class Config:
 
     # Animation Setting
     TARGET_FPS: int = 30
-    DURATION: int = 10
+    DURATION: int = 30
     INTERVAL: float = 1000 / TARGET_FPS
     FRAMES: float = TARGET_FPS * DURATION

@@ -24,7 +24,7 @@ class Herbivore(Circle):
     isDebug: bool = Config.DEBUG_MODE and Config.HERBIVORE
     
     FOV_ANGLE = 270
-    FOV_RADIUS = 4
+    FOV_RADIUS = 6
     DIVISION_UNIT = 300
     ENERGY_UNIT = 1000
     GRID_UPDATE_THRESHOLD = 0.2
@@ -73,6 +73,9 @@ class Herbivore(Circle):
         if self.energy <= 0:
             self.remove()
             return
+
+        adjusted_fov_radius = max(5, self.FOV_RADIUS * (self.energy / self.ENERGY_UNIT))
+        self.fov_patch.set_radius(adjusted_fov_radius)
 
         # Adjust the agent's radius according to current energy.
         self.radius = max(1, self.init_radius * self.energy / self.ENERGY_UNIT)
@@ -221,6 +224,15 @@ class Herbivore(Circle):
     """
     FOV(Field Of View)
     """
+    def get_adjusted_fov_radius(self):
+        """
+        Returns the FOV radius scaled based on current energy.
+        Ensures the FOV never drops below 50% of its original size.
+        """
+        ratio = max(0.0, min(1.0, self.energy / self.ENERGY_UNIT))
+        scale = 0.5 + 0.5 * ratio  # Clamp FOV between 50% and 100%
+        return max(5, self.FOV_RADIUS * scale)
+    
     def is_in_fov(self, obj):
         """
         Checks whether a given object is within this herbivore's field of view.
@@ -236,15 +248,15 @@ class Herbivore(Circle):
 
         dx = obj.pos.x - self.pos.x
         dy = obj.pos.y - self.pos.y
-        distance_sq = dx * dx + dy * dy  # Euclidean distance squared
+        distance_sq = dx * dx + dy * dy
 
-        if distance_sq > self.FOV_RADIUS ** 2:
-            return False  # Out of range
+        fov_radius = self.get_adjusted_fov_radius()
+        if distance_sq > fov_radius ** 2:
+            return False
 
-        # Calculate FOV degree
         angle = np.degrees(np.arctan2(dy, dx))
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
-        angle_diff = (angle - direction_angle + 180) % 360 - 180  
+        angle_diff = (angle - direction_angle + 180) % 360 - 180
 
         return abs(angle_diff) <= self.FOV_ANGLE / 2
 
@@ -259,10 +271,11 @@ class Herbivore(Circle):
         Returns:
             GameObject or None: The closest object of the given type, or None if none found.
         """
-        candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
+        fov_radius = self.get_adjusted_fov_radius()
+        candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, fov_radius)
 
         best_target = None
-        min_distance_sq = self.FOV_RADIUS ** 2
+        min_distance_sq = fov_radius ** 2
 
         for obj in candidates:
             if obj is self or not isinstance(obj, target_type):
@@ -280,9 +293,8 @@ class Herbivore(Circle):
             angle_diff = (angle - direction_angle + 180) % 360 - 180
 
             if abs(angle_diff) <= self.FOV_ANGLE / 2:
-                if distance_sq < min_distance_sq:
-                    best_target = obj
-                    min_distance_sq = distance_sq
+                best_target = obj
+                min_distance_sq = distance_sq
 
         return best_target
 
@@ -317,7 +329,9 @@ class Herbivore(Circle):
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
 
-        # Detection-dependent visual
+        adjusted_fov_radius = self.get_adjusted_fov_radius()
+        self.fov_patch.set_radius(adjusted_fov_radius)
+
         if detection_type == "avoid":
             self.fov_patch.set_color("red")
         elif detection_type == "approach":

@@ -24,9 +24,9 @@ class Predator(Rectangle):
     isDebug: bool = Config.DEBUG_MODE and Config.PREDATOR
 
     FOV_ANGLE = 30
-    FOV_RADIUS = 6
-    DIVISION_UNIT = 1000
-    ENERGY_UNIT = 1500
+    FOV_RADIUS = 10
+    DIVISION_UNIT = 800
+    ENERGY_UNIT = 1000
     GRID_UPDATE_THRESHOLD = 0.2
  
     def __init__(
@@ -102,6 +102,9 @@ class Predator(Rectangle):
         if self.energy <= 0:
             self.remove()
             return
+
+        adjusted_fov_radius = max(5, self.FOV_RADIUS * (self.energy / self.ENERGY_UNIT))
+        self.fov_patch.set_radius(adjusted_fov_radius)
 
         # Update size based on energy level.
         self.width = max(2, self.init_width * self.energy / self.ENERGY_UNIT)
@@ -252,6 +255,15 @@ class Predator(Rectangle):
     """
     FOV
     """
+    def get_adjusted_fov_radius(self):
+        """
+        Returns the FOV radius scaled based on current energy.
+        Ensures the FOV never drops below 50% of its original size.
+        """
+        ratio = max(0.0, min(1.0, self.energy / self.ENERGY_UNIT))
+        scale = 0.5 + 0.5 * ratio  # Clamp FOV between 50% and 100%
+        return max(5, self.FOV_RADIUS * scale)
+
     def is_in_fov(self, obj):
         """
         Checks if the given object is still inside the Predator's FOV.
@@ -261,12 +273,12 @@ class Predator(Rectangle):
 
         dx = obj.pos.x - self.pos.x
         dy = obj.pos.y - self.pos.y
-        distance_sq = dx * dx + dy * dy  # Euclidean distance squared
+        distance_sq = dx * dx + dy * dy
 
-        if distance_sq > self.FOV_RADIUS ** 2:
-            return False  # Out of range
+        fov_radius = self.get_adjusted_fov_radius()
+        if distance_sq > fov_radius ** 2:
+            return False
 
-        # Calculate FOV degree
         angle = np.degrees(np.arctan2(dy, dx))
         direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
         angle_diff = (angle - direction_angle + 180) % 360 - 180
@@ -277,23 +289,30 @@ class Predator(Rectangle):
         """
         Detects the nearest object of the given type within the predator's FOV.
         """
-        candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, self.FOV_RADIUS)
+        fov_radius = self.get_adjusted_fov_radius()
+        candidates = grid.retrieve_in_fov_range(self.pos.x, self.pos.y, fov_radius)
+
         best_target = None
-        min_distance_sq = self.FOV_RADIUS ** 2
+        min_distance_sq = fov_radius ** 2
 
         for obj in candidates:
             if obj is self or not isinstance(obj, target_type):
                 continue
+
             dx = obj.pos.x - self.pos.x
             dy = obj.pos.y - self.pos.y
-            dist_sq = dx * dx + dy * dy
-            angle = np.degrees(np.arctan2(dy, dx))
-            dir_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
-            diff = (angle - dir_angle + 180) % 360 - 180
+            distance_sq = dx * dx + dy * dy
 
-            if dist_sq < min_distance_sq and abs(diff) <= self.FOV_ANGLE / 2:
+            if distance_sq > min_distance_sq:
+                continue
+
+            angle = np.degrees(np.arctan2(dy, dx))
+            direction_angle = np.degrees(np.arctan2(self.target_y - self.pos.y, self.target_x - self.pos.x))
+            angle_diff = (angle - direction_angle + 180) % 360 - 180
+
+            if abs(angle_diff) <= self.FOV_ANGLE / 2:
                 best_target = obj
-                min_distance_sq = dist_sq
+                min_distance_sq = distance_sq
 
         return best_target
 
@@ -324,13 +343,13 @@ class Predator(Rectangle):
         self.fov_patch.set_theta1(direction_angle - self.FOV_ANGLE / 2)
         self.fov_patch.set_theta2(direction_angle + self.FOV_ANGLE / 2)
 
-        adjusted_fov_radius = max(5, self.FOV_RADIUS * (self.energy / self.ENERGY_UNIT))
+        adjusted_fov_radius = self.get_adjusted_fov_radius()
         self.fov_patch.set_radius(adjusted_fov_radius)
 
         if detection_type == "approach":
-            self.fov_patch.set_color("orange")  # hunt status (active)
+            self.fov_patch.set_color("red")
         else:
-            self.fov_patch.set_color("cyan")    # search status
+            self.fov_patch.set_color("cyan")
 
         self.fov_patch.set_alpha(0.3)
 
