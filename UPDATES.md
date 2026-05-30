@@ -11,7 +11,7 @@
 
 ## Circle and Rectangle Collision System
 
-**Date: 2025.03.03.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/27968305b239fde20802f6942b82fc8bffc1c955)
+**Date: 2025.03.03.** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/27968305b239fde20802f6942b82fc8bffc1c955)
 
 **Added Functions:**
 
@@ -24,7 +24,7 @@
 
 ## Plant, Herbivore, and Predator
 
-**Date: 2025.03.03** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/f1abcdb2f6f2a5673954d47ea583f328184bf76e)
+**Date: 2025.03.03** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/f1abcdb2f6f2a5673954d47ea583f328184bf76e)
 
 **Improvement:**
 
@@ -37,7 +37,7 @@
 
 ## Multi Simulation with Population Graph
 
-**Date: 2025.03.03** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/a57ec7a8435e497bd419ead2e381c5bc6b5a60f0)
+**Date: 2025.03.03** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/a57ec7a8435e497bd419ead2e381c5bc6b5a60f0)
 
 -   Add multi simulations and plots.
 -   Duplication test.
@@ -46,7 +46,7 @@
 
 ## Debug Mode
 
-**Date: 2025.03.03** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/e69b6ca8c2296b0b65660438d7e64ca53ecedcfa)
+**Date: 2025.03.03** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/e69b6ca8c2296b0b65660438d7e64ca53ecedcfa)
 
 -   Add energy but it has no functions.
 -   Add Debug Mode.
@@ -55,7 +55,7 @@
 
 ## FOV Detector
 
-**Date: 2025.03.05.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/03d710c4adadf3cd7c79e6b35f0317f1845243c7)
+**Date: 2025.03.05.** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/03d710c4adadf3cd7c79e6b35f0317f1845243c7)
 
 -   Add individual debug mode.
 -   Add FOV detector.
@@ -64,7 +64,7 @@
 
 ## Spatial Hash Grid (Collision)
 
-**Date: 2025.03.13.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/db75f806d56dd9e86ce1deced4907db306a688ee)
+**Date: 2025.03.13.** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/db75f806d56dd9e86ce1deced4907db306a688ee)
 
 -   At first, I tried using a QuadTree for object collision detection. It worked well for collisions, but I stopped using it due to issues with FOV detection. So, I switched to a Spatial Hash Grid instead.
 -   I set the predator object's size to change based on its energy level.
@@ -73,7 +73,7 @@
 
 ## Apply Reinforcement Learning
 
-**Date: 2025.03.18.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/74c93b772fb0bd8417c9d17fb9bec167510b42a8)
+**Date: 2025.03.18.** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/74c93b772fb0bd8417c9d17fb9bec167510b42a8)
 
 -   Add Reinforcement Learning train and infercence.
 
@@ -87,7 +87,7 @@
 
 ## Fix Reinforcement Learning and Enhance model
 
-**Date: 2025.04.11.** - [**Commit Link**](https://github.com/kar7mp5/SurvivalRL/commit/637aaac1c92f931b7e406c621b659c70c8b17f4c)
+**Date: 2025.04.11.** - [**Commit Link**](https://github.com/br4c3/SurvivalRL/commit/637aaac1c92f931b7e406c621b659c70c8b17f4c)
 
 ### 1. Reward logic refactored into agents
 
